@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DiskSpaceMonitor/DiskSpaceMonitor.csproj" />
+  <Project Path="DiskSpaceMonitor.UnitTests/DiskSpaceMonitor.UnitTests.csproj" />
+</Solution>

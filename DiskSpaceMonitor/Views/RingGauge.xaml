@@ -1,0 +1,45 @@
+<UserControl x:Class="DiskSpaceMonitor.Views.RingGauge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- A fixed 200x200 design surface scaled to fit the window by the Viewbox,
+         so resizing the window simply scales the whole gauge. -->
+    <Viewbox Stretch="Uniform">
+        <Grid Width="200" Height="200">
+
+            <!-- Subtle dark disc so ring + text stay readable over any wallpaper.
+                 Its opacity is user-configurable (see SetBackgroundOpacity). -->
+            <Ellipse x:Name="BackingDisc" Width="196" Height="196" Fill="#161A20" Opacity="0.7"/>
+
+            <!-- Full-circle track behind the used arc. A solid grey (not a faint
+                 white that only reads as grey over the dark disc) so it stays
+                 visible when the background disc is made transparent. -->
+            <Ellipse x:Name="Track" Width="168" Height="168"
+                     Stroke="#6E7686" StrokeThickness="16"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <!-- Used portion; geometry + colour are set from code-behind. -->
+            <Path x:Name="UsedArc" StrokeThickness="16"
+                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+
+            <!-- Centre stats. -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel.Effect>
+                    <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="0" Opacity="0.8"/>
+                </StackPanel.Effect>
+
+                <TextBlock x:Name="DriveLabel" Text="C:"
+                           HorizontalAlignment="Center"
+                           Foreground="#CCFFFFFF" FontSize="20" FontWeight="SemiBold"/>
+
+                <TextBlock x:Name="FreeText" Text="--"
+                           HorizontalAlignment="Center" Margin="0,2,0,0"
+                           Foreground="White" FontSize="23" FontWeight="Bold"/>
+
+                <TextBlock x:Name="FreePercent" Text="-- Free"
+                           HorizontalAlignment="Center" Margin="0,-3,0,0"
+                           Foreground="White" FontSize="19" FontWeight="Bold"/>
+            </StackPanel>
+        </Grid>
+    </Viewbox>
+</UserControl>

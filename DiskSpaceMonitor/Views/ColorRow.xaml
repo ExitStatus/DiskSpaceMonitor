@@ -1,0 +1,34 @@
+<UserControl x:Class="DiskSpaceMonitor.Views.ColorRow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="0,5">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="90"/>
+            <ColumnDefinition Width="26"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock x:Name="LabelText" Grid.Column="0" VerticalAlignment="Center"
+                   FontSize="12" TextTrimming="CharacterEllipsis"/>
+
+        <Border Grid.Column="1" Width="18" Height="18" CornerRadius="3"
+                BorderThickness="1" BorderBrush="#80888888"
+                HorizontalAlignment="Left" VerticalAlignment="Center">
+            <Border.Background>
+                <SolidColorBrush x:Name="SwatchBrush"/>
+            </Border.Background>
+        </Border>
+
+        <Slider x:Name="RSlider" Grid.Column="2" Minimum="0" Maximum="255"
+                Margin="5,0" MinWidth="70" VerticalAlignment="Center" ToolTip="Red"
+                ValueChanged="OnSliderChanged"/>
+        <Slider x:Name="GSlider" Grid.Column="3" Minimum="0" Maximum="255"
+                Margin="5,0" MinWidth="70" VerticalAlignment="Center" ToolTip="Green"
+                ValueChanged="OnSliderChanged"/>
+        <Slider x:Name="BSlider" Grid.Column="4" Minimum="0" Maximum="255"
+                Margin="5,0" MinWidth="70" VerticalAlignment="Center" ToolTip="Blue"
+                ValueChanged="OnSliderChanged"/>
+    </Grid>
+</UserControl>

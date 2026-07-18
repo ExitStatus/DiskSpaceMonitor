@@ -1,0 +1,90 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+[Oo]ut/
+[Bb]uild/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+# Publish output
+publish/
+[Pp]ublish/
+*.publishproj
+PublishScripts/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.userprefs
+*.svclog
+*.DotSettings.user
+
+# Test results & coverage
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+[Cc]overlet/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Build logs & temp
+*.log
+*.tlog
+*.binlog
+*.tmp
+*.temp
+*.cache
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tli
+*.tlh
+*.tmp_proj
+*_wpftmp.csproj
+
+# ReSharper / dotCover
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.dotCover
+
+# Windows / OS cruft
+[Tt]humbs.db
+[Tt]humbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Claude Code
+.claude/
