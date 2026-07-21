@@ -10,7 +10,21 @@
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Icons\app.ico</ApplicationIcon>
+
+    <!-- This is an idle desktop widget: keep the memory footprint small rather
+         than optimise for throughput. Workstation, non-concurrent GC avoids the
+         background-GC heap reservations, and ConserveMemory returns freed
+         segments to the OS instead of retaining them. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
+    <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 0–9; higher = more aggressive about releasing memory back to the OS. -->
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" Trim="true" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="DiskSpaceMonitor.UnitTests" />

@@ -108,6 +108,22 @@ namespace DiskSpaceMonitor.Interop
         [DllImport("kernel32.dll")]
         public static extern IntPtr GetModuleHandle(string? lpModuleName);
 
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr GetCurrentProcess();
+
+        // Trims the process working set: pages not actively in use are released,
+        // and the OS faults them back in on demand. Cheap way to keep an idle
+        // widget's reported footprint low.
+        [DllImport("psapi.dll")]
+        public static extern bool EmptyWorkingSet(IntPtr hProcess);
+
+        /// <summary>Ask Windows to page out the idle working set for this process.</summary>
+        public static void TrimWorkingSet()
+        {
+            try { EmptyWorkingSet(GetCurrentProcess()); }
+            catch { /* best effort — never let a trim take the widget down */ }
+        }
+
         [DllImport("user32.dll")]
         public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 

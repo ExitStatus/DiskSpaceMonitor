@@ -26,6 +26,7 @@ namespace DiskSpaceMonitor
         private IAutoStartService _autoStart = null!;
         private WidgetSettings _settings = null!;
         private CtrlHook? _ctrlHook;
+        private DispatcherTimer? _trimTimer;
 
         /// <summary>The running application instance.</summary>
         public static App Instance => (App)Current;
@@ -58,10 +59,32 @@ namespace DiskSpaceMonitor
             // polling, so nothing is running while Ctrl is up.
             _ctrlHook = new CtrlHook();
             _ctrlHook.CtrlChanged += OnCtrlChanged;
+
+            StartWorkingSetTrimming();
+        }
+
+        /// <summary>
+        /// The widget is idle almost all the time, so hand the transient startup
+        /// memory (JIT, XAML parse) back to the OS once the first frame has settled,
+        /// then keep the reported working set low on a slow cadence.
+        /// </summary>
+        private void StartWorkingSetTrimming()
+        {
+            // Trim once after the initial render/layout has drained.
+            Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,
+                new Action(NativeMethods.TrimWorkingSet));
+
+            _trimTimer = new DispatcherTimer(DispatcherPriority.Background)
+            {
+                Interval = TimeSpan.FromSeconds(60)
+            };
+            _trimTimer.Tick += (_, _) => NativeMethods.TrimWorkingSet();
+            _trimTimer.Start();
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            _trimTimer?.Stop();
             _ctrlHook?.Dispose();
             base.OnExit(e);
         }
