@@ -5,6 +5,8 @@ wallpaper gadget) and shows remaining space on your drives as circular gauges,
 with the drive, free space, and percentage free in the middle. Show one drive or
 several — each gauge is its own window you can place and size independently.
 
+![Disk Space Monitor running on the desktop](Docs/main.png)
+
 ## Features
 
 - **Circular gauge** – ring fills with used space; colour shifts green → amber →
