@@ -1,12 +1,14 @@
 # Attributions
 
+Disk Space Monitor is licensed under the MIT License (see `LICENSE`).
+
 ## Application icon
 
-The application icon (`DiskSpaceMonitor/Icons/app.ico`) is the **yast HD** icon
-from the **FS Icons** set by **franksouza183**.
+The application icon (`DiskSpaceMonitor/Icons/app.ico`) is original artwork
+created for this project and is covered by the project's MIT License. It is not
+derived from any third-party icon set, so no external attribution is required.
 
-- Icon set: FS Icons by franksouza183
-- Icon: Devices / yast HD
-- Source: https://www.iconarchive.com/show/fs-icons-by-franksouza183/Devices-yast-HD-icon.html
+## Third-party assets
 
-Thanks to the author for making this icon set available.
+None. The project currently bundles no third-party art, fonts, or other assets
+that carry their own licensing terms.
