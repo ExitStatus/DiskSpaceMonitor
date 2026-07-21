@@ -17,7 +17,9 @@
         MouseLeftButtonDown="OnWindowMouseLeftButtonDown"
         MouseMove="OnWindowMouseMove"
         MouseLeftButtonUp="OnWindowMouseLeftButtonUp"
-        LostMouseCapture="OnWindowLostMouseCapture">
+        LostMouseCapture="OnWindowLostMouseCapture"
+        ContextMenuOpening="OnContextMenuOpening"
+        ContextMenuClosing="OnContextMenuClosing">
 
     <Window.Resources>
         <!-- Small circular drag handle used for the four resize corners. -->

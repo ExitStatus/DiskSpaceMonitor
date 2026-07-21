@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -208,6 +209,40 @@ namespace DiskSpaceMonitor.Views
             else
                 ex &= ~NativeMethods.WS_EX_TRANSPARENT;
             NativeMethods.SetWindowLongPtr(_hwnd, NativeMethods.GWL_EXSTYLE, new IntPtr(ex));
+        }
+
+        /// <summary>Add or clear WS_EX_NOACTIVATE so the window can (temporarily) be activated.</summary>
+        private void SetNoActivate(bool noActivate)
+        {
+            if (_hwnd == IntPtr.Zero)
+                return;
+
+            long ex = NativeMethods.GetWindowLongPtr(_hwnd, NativeMethods.GWL_EXSTYLE).ToInt64();
+            if (noActivate)
+                ex |= NativeMethods.WS_EX_NOACTIVATE;
+            else
+                ex &= ~NativeMethods.WS_EX_NOACTIVATE;
+            NativeMethods.SetWindowLongPtr(_hwnd, NativeMethods.GWL_EXSTYLE, new IntPtr(ex));
+        }
+
+        // The widget is a no-activate, always-behind tool window, so WPF's context
+        // menu never gains the focus/mouse-capture it needs to dismiss on an outside
+        // click or Escape — it would only close when an item was picked. Briefly make
+        // the window activatable and foreground while the menu is up so it behaves
+        // normally; the WndProc Z-order pin keeps it visually behind everything.
+        private void OnContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            SetNoActivate(false);
+            NativeMethods.SetForegroundWindow(_hwnd);
+        }
+
+        private void OnContextMenuClosing(object sender, ContextMenuEventArgs e)
+        {
+            SetNoActivate(true);
+
+            // Activation may have nudged the Z-order; drop straight back to the bottom.
+            NativeMethods.SetWindowPos(_hwnd, NativeMethods.HWND_BOTTOM, 0, 0, 0, 0,
+                NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE);
         }
 
         // --- Moving ----------------------------------------------------------
