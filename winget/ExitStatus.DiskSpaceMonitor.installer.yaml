@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
 PackageIdentifier: ExitStatus.DiskSpaceMonitor
 PackageVersion: 1.0.0
 InstallerType: portable
@@ -13,4 +13,4 @@ Installers:
     InstallerUrl: https://github.com/ExitStatus/DiskSpaceMonitor/releases/download/v1.0.0/DiskSpaceMonitor-1.0.0-win-arm64-selfcontained.exe
     InstallerSha256: 1F37F2C9DDF6B9269D0D701A3AD33762A3D70B87E65C790AAA2762D1FE91A3F1
 ManifestType: installer
-ManifestVersion: 1.6.0
+ManifestVersion: 1.12.0
