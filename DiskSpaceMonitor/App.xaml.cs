@@ -10,6 +10,7 @@ using DiskSpaceMonitor.Interop;
 using DiskSpaceMonitor.Settings;
 using DiskSpaceMonitor.Startup;
 using DiskSpaceMonitor.Widgets;
+using DiskSpaceMonitor.Widgets.Bar;
 using DiskSpaceMonitor.Widgets.Circular;
 using DiskSpaceMonitor.Widgets.Concentric;
 using DiskSpaceMonitor.Views;
@@ -23,7 +24,7 @@ namespace DiskSpaceMonitor
     public partial class App : Application
     {
         private readonly List<MainWindow> _windows = new();
-        private readonly WidgetRegistry _registry = new(new CircularWidget(), new ConcentricWidget());
+        private readonly WidgetRegistry _registry = new(new CircularWidget(), new ConcentricWidget(), new BarWidget());
 
         private ISettingsStore _store = null!;
         private IDriveReader _driveReader = null!;
@@ -210,15 +211,19 @@ namespace DiskSpaceMonitor
 
             // Snapshot for cancel-revert. Capture the size now — a preview rebuild may close 'source'.
             string savedWidget = _settings.Style;
-            IWidgetConfig savedConfig = factory.ReadConfig(_settings.StyleConfig);
+            IWidgetConfig savedConfig = factory.ReadConfig(_settings.GetStyleConfig(_settings.Style));
             double savedOpacity = _settings.WidgetOpacity;
             double newWidgetSize = source.Width;
+
+            // Each widget's initial config comes from its own stored blob (default if none yet), so
+            // switching styles in the dialog restores that style's saved settings.
+            IWidgetConfig ConfigFor(string id) => _registry.Get(id).ReadConfig(_settings.GetStyleConfig(id));
 
             var shown = _settings.Drives.Select(d => d.DrivePath).ToList();
             var dialog = new SettingsWindow(
                 shown, _settings.RefreshSeconds, _autoStart.IsEnabled(),
-                _settings.Style, factory.ReadConfig(_settings.StyleConfig), _settings.WidgetOpacity,
-                _catalog, _registry, PreviewWidget);
+                _settings.Style, ConfigFor(_settings.Style), _settings.WidgetOpacity,
+                _catalog, _registry, PreviewWidget, ConfigFor);
             dialog.ShowDialog();
 
             if (dialog.ExitRequested)
@@ -233,7 +238,8 @@ namespace DiskSpaceMonitor
                 _autoStart.SetEnabled(dialog.AutoStart);
 
                 _settings.Style = dialog.SelectedWidget;
-                _settings.StyleConfig = _registry.Get(dialog.SelectedWidget).WriteConfig(dialog.SelectedConfig) as JsonObject;
+                _settings.SetStyleConfig(dialog.SelectedWidget,
+                    _registry.Get(dialog.SelectedWidget).WriteConfig(dialog.SelectedConfig) as JsonObject);
                 _settings.WidgetOpacity = dialog.WidgetOpacity;
 
                 // Match the window topology to the chosen widget before reconciling drives.

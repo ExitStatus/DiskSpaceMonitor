@@ -84,10 +84,12 @@ namespace DiskSpaceMonitor.UnitTests.Settings
 
             settings.Style.Should().Be("Circular");
             settings.WidgetOpacity.Should().Be(0.6);   // top-level global, not nulled
-            settings.StyleConfig.Should().NotBeNull();
-            settings.StyleConfig!["RingThickness"]!.GetValue<double>().Should().Be(22);
-            settings.StyleConfig!["CriticalThresholdPercent"]!.GetValue<double>().Should().Be(25);
-            settings.StyleConfig!["BackgroundColor"]!.GetValue<string>().Should().Be("#111111");
+            var circular = settings.GetStyleConfig("Circular");
+            circular.Should().NotBeNull();
+            circular!["RingThickness"]!.GetValue<double>().Should().Be(22);
+            circular!["CriticalThresholdPercent"]!.GetValue<double>().Should().Be(25);
+            circular!["BackgroundColor"]!.GetValue<string>().Should().Be("#111111");
+            settings.StyleConfig.Should().BeNull();   // legacy field cleared after migration
 
             // Appearance legacy globals cleared so they aren't re-persisted.
             settings.BackgroundColor.Should().BeNull();

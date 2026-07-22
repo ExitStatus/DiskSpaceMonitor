@@ -45,7 +45,7 @@ namespace DiskSpaceMonitor.UnitTests.Settings
                 RefreshSeconds = 30,
                 Style = "Circular",
                 WidgetOpacity = 0.8,
-                StyleConfig = new JsonObject { ["RingThickness"] = 24, ["TrackColor"] = "#123456" },
+                StyleConfigs = { ["Circular"] = new JsonObject { ["RingThickness"] = 24, ["TrackColor"] = "#123456" } },
                 Drives =
                 {
                     new DriveWidgetConfig { DrivePath = "C:\\", Left = 10, Top = 20, Size = 220 },
@@ -59,14 +59,60 @@ namespace DiskSpaceMonitor.UnitTests.Settings
             loaded.RefreshSeconds.Should().Be(30);
             loaded.Style.Should().Be("Circular");
             loaded.WidgetOpacity.Should().Be(0.8);
-            loaded.StyleConfig.Should().NotBeNull();
-            loaded.StyleConfig!["RingThickness"]!.GetValue<double>().Should().Be(24);
-            loaded.StyleConfig!["TrackColor"]!.GetValue<string>().Should().Be("#123456");
+            var cfg = loaded.GetStyleConfig("Circular");
+            cfg.Should().NotBeNull();
+            cfg!["RingThickness"]!.GetValue<double>().Should().Be(24);
+            cfg!["TrackColor"]!.GetValue<string>().Should().Be("#123456");
 
             loaded.Drives.Should().HaveCount(2);
             loaded.Drives[0].DrivePath.Should().Be("C:\\");
             loaded.Drives[0].Size.Should().Be(220);
             loaded.Drives[1].DrivePath.Should().Be("D:\\");
+        }
+
+        [Test]
+        public void SaveThenLoad_RoundTripsEveryStylesConfig()
+        {
+            var store = new JsonSettingsStore(_path);
+            var original = new WidgetSettings
+            {
+                Style = "Bar",
+                StyleConfigs =
+                {
+                    ["Circular"] = new JsonObject { ["RingThickness"] = 18 },
+                    ["Bar"] = new JsonObject { ["BarWidthPercent"] = 55, ["ShowTotalSpace"] = true },
+                },
+            };
+
+            store.Save(original);
+            var loaded = store.Load();
+
+            // The inactive style keeps its config too, so switching back never loses it.
+            loaded.GetStyleConfig("Circular")!["RingThickness"]!.GetValue<double>().Should().Be(18);
+            loaded.GetStyleConfig("Bar")!["BarWidthPercent"]!.GetValue<double>().Should().Be(55);
+            loaded.GetStyleConfig("Bar")!["ShowTotalSpace"]!.GetValue<bool>().Should().BeTrue();
+        }
+
+        [Test]
+        public void Load_LegacyV110SingleStyleConfig_IsMigratedToPerStyleMap()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            File.WriteAllText(_path, """
+                {
+                  "Style": "Concentric",
+                  "StyleConfig": { "RingThickness": 20, "TrackOpacity": 0.4 },
+                  "Drives": [ { "DrivePath": "C:\\", "Size": 200 } ]
+                }
+                """);
+
+            var loaded = new JsonSettingsStore(_path).Load();
+
+            loaded.Style.Should().Be("Concentric");
+            loaded.StyleConfig.Should().BeNull();   // legacy field folded away
+            var concentric = loaded.GetStyleConfig("Concentric");
+            concentric.Should().NotBeNull();
+            concentric!["RingThickness"]!.GetValue<double>().Should().Be(20);
+            concentric!["TrackOpacity"]!.GetValue<double>().Should().Be(0.4);
         }
 
         [Test]
@@ -146,10 +192,11 @@ namespace DiskSpaceMonitor.UnitTests.Settings
             loaded.RefreshSeconds.Should().Be(10);
             loaded.Style.Should().Be("Circular");
             loaded.WidgetOpacity.Should().Be(0.6);   // top-level global, loaded directly
-            loaded.StyleConfig.Should().NotBeNull();
-            loaded.StyleConfig!["RingThickness"]!.GetValue<double>().Should().Be(22);
-            loaded.StyleConfig!["LowThresholdPercent"]!.GetValue<double>().Should().Be(55);
-            loaded.StyleConfig!["BackgroundColor"]!.GetValue<string>().Should().Be("#111111");
+            var circular = loaded.GetStyleConfig("Circular");
+            circular.Should().NotBeNull();
+            circular!["RingThickness"]!.GetValue<double>().Should().Be(22);
+            circular!["LowThresholdPercent"]!.GetValue<double>().Should().Be(55);
+            circular!["BackgroundColor"]!.GetValue<string>().Should().Be("#111111");
 
             loaded.Drives.Should().HaveCount(2);
 

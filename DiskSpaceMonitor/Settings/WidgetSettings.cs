@@ -20,13 +20,32 @@ namespace DiskSpaceMonitor.Settings
         /// <summary>Overall opacity of the rendered widget (0.2–1). Shared by every instance.</summary>
         public double WidgetOpacity { get; set; } = 1.0;
 
-        /// <summary>Opaque configuration blob for the selected style; owned by the style.</summary>
-        public JsonObject? StyleConfig { get; set; }
+        /// <summary>Opaque configuration blob per widget style, keyed by widget id. Every style
+        /// keeps its own configuration, so switching styles or restarting never loses it.</summary>
+        public Dictionary<string, JsonObject> StyleConfigs { get; set; } = new();
+
+        /// <summary>The stored config for a style, or null if it has none yet.</summary>
+        public JsonObject? GetStyleConfig(string styleId)
+            => StyleConfigs.TryGetValue(styleId, out var cfg) ? cfg : null;
+
+        /// <summary>Store (or, when null, clear) a style's config.</summary>
+        public void SetStyleConfig(string styleId, JsonObject? config)
+        {
+            if (config != null)
+                StyleConfigs[styleId] = config;
+            else
+                StyleConfigs.Remove(styleId);
+        }
 
         /// <summary>Placement/size of the single window used by a multi-drive widget (e.g. Concentric).
         /// Null until first used. Kept separate from <see cref="Drives"/> so per-drive gauge positions
         /// are preserved when switching widgets.</summary>
         public DriveWidgetConfig? SingleInstance { get; set; }
+
+        // --- Legacy single-style config (v1.1.0, one blob for the active style). Migrated into
+        //     StyleConfigs on load. ---
+        [JsonInclude, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public JsonObject? StyleConfig { get; set; }
 
         // --- Legacy single-widget fields (pre multi-drive). Migrated on load. ---
         [JsonInclude, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -83,10 +102,10 @@ namespace DiskSpaceMonitor.Settings
             // 2. Pre-v1.1 global appearance -> the shared Circular config. A pre-v1.1 file always
             //    wrote every appearance field, so any being present marks it as legacy.
             bool legacyAppearance = BackgroundColor != null || BackgroundOpacity.HasValue;
-            if (legacyAppearance && StyleConfig == null)
+            if (legacyAppearance && StyleConfig == null && !StyleConfigs.ContainsKey("Circular"))
             {
                 Style = "Circular";
-                StyleConfig = BuildLegacyCircularBlob();
+                StyleConfigs["Circular"] = BuildLegacyCircularBlob();
                 // WidgetOpacity was already a top-level global; it loaded directly.
             }
 
@@ -95,6 +114,12 @@ namespace DiskSpaceMonitor.Settings
             LowThresholdPercent = CriticalThresholdPercent = null;
             BackgroundColor = TrackColor = HealthyColor = null;
             WarningColor = CriticalColor = TextColor = null;
+
+            // 3. v1.1.0 single StyleConfig -> the per-style StyleConfigs map (keyed by the active
+            //    style), then drop the legacy field so it is never re-persisted.
+            if (StyleConfig != null && !StyleConfigs.ContainsKey(Style))
+                StyleConfigs[Style] = StyleConfig;
+            StyleConfig = null;
         }
 
         // Keys match CircularConfig property names; values come from the legacy globals with the

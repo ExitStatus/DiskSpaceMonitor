@@ -13,6 +13,8 @@ namespace DiskSpaceMonitor.Views
         private readonly List<CheckBox> _boxes = new();
         private readonly WidgetRegistry _registry;
         private readonly Action<string, IWidgetConfig, double> _preview;
+        private readonly Func<string, IWidgetConfig> _configFor;   // a style's saved config (default if none)
+        private readonly Dictionary<string, IWidgetConfig> _sessionConfigs = new();  // in-dialog edits per style
         private readonly IReadOnlyList<string> _shownDrives;   // snapshot at open; per-drive editors use it
 
         private string _widgetId;
@@ -57,11 +59,13 @@ namespace DiskSpaceMonitor.Views
 
         public SettingsWindow(IReadOnlyList<string> shownPaths, int refreshSeconds, bool autoStart,
             string widgetId, IWidgetConfig config, double widgetOpacity, IDriveCatalog catalog,
-            WidgetRegistry registry, Action<string, IWidgetConfig, double> preview)
+            WidgetRegistry registry, Action<string, IWidgetConfig, double> preview,
+            Func<string, IWidgetConfig> configFor)
         {
             InitializeComponent();
             _registry = registry;
             _preview = preview;
+            _configFor = configFor;
             _shownDrives = shownPaths.ToList();
             _widgetId = widgetId;
             _config = config;
@@ -103,8 +107,12 @@ namespace DiskSpaceMonitor.Views
             if (id == _widgetId)
                 return;
 
+            // Remember any edits to the style we're leaving, so switching back restores them.
+            if (_editor != null)
+                _sessionConfigs[_widgetId] = _editor.CurrentConfig();
+
             _widgetId = id;
-            _config = _registry.Get(id).DefaultConfig();
+            _config = _sessionConfigs.TryGetValue(id, out var cached) ? cached : _configFor(id);
             BuildWidgetTabs();
             Preview();
         }

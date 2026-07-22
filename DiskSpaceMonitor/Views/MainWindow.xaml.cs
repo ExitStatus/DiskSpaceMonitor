@@ -475,7 +475,7 @@ namespace DiskSpaceMonitor.Views
         private void ApplyWidget()
         {
             var factory = _registry.Get(_settings.Style);
-            ApplyWidget(_settings.Style, factory.ReadConfig(_settings.StyleConfig), _settings.WidgetOpacity);
+            ApplyWidget(_settings.Style, factory.ReadConfig(_settings.GetStyleConfig(_settings.Style)), _settings.WidgetOpacity);
         }
 
         /// <summary>

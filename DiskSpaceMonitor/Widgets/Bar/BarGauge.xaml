@@ -1,0 +1,9 @@
+<UserControl x:Class="DiskSpaceMonitor.Widgets.Bar.BarGauge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Root is rendered at a fixed design size (so the proportional bar rows work); the
+         Viewbox then scales the whole chart – bars, gridlines and all text – to the window. -->
+    <Viewbox Stretch="Uniform">
+        <Grid x:Name="Root"/>
+    </Viewbox>
+</UserControl>

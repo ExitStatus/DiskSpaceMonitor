@@ -22,10 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Labels nudge apart automatically so they never overlap, and the window sizes
   itself tightly to its content. Selecting a single-instance style collapses the
   per-drive windows into one and back again, remembering its own position and size.
+- **Bar graph widget** – a third style: a single window with a vertical bar per
+  drive on a 0–100% (used space) axis, each bar coloured by free-space status. The
+  bar width, the unused-space transparency, the track/status colours, and the
+  thresholds are configurable, and optional **Show used space** / **Show total
+  space** captions display the humanized used amount on each bar and the total
+  above it. The whole chart (bars and labels) scales with the window.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as
   you drag; **Cancel** reverts. Replaces the inline R/G/B sliders.
+- **Per-style settings** – every widget style keeps its own configuration, so
+  switching styles or restarting no longer resets another style's settings.
 
 ### Changed
 
