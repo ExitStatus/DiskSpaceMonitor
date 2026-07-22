@@ -59,7 +59,7 @@
     <Window.ContextMenu>
         <ContextMenu>
             <MenuItem Header="Settings…" Click="OnSettingsClick"/>
-            <MenuItem Header="Hide this drive" Click="OnExitClick"/>
+            <MenuItem x:Name="HideDriveItem" Header="Hide this drive" Click="OnExitClick"/>
             <Separator/>
             <MenuItem Header="Exit application" Click="OnExitApplicationClick"/>
         </ContextMenu>

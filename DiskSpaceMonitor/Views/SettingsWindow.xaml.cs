@@ -13,6 +13,7 @@ namespace DiskSpaceMonitor.Views
         private readonly List<CheckBox> _boxes = new();
         private readonly WidgetRegistry _registry;
         private readonly Action<string, IWidgetConfig, double> _preview;
+        private readonly IReadOnlyList<string> _shownDrives;   // snapshot at open; per-drive editors use it
 
         private string _widgetId;
         private IWidgetConfig _config;
@@ -61,6 +62,7 @@ namespace DiskSpaceMonitor.Views
             InitializeComponent();
             _registry = registry;
             _preview = preview;
+            _shownDrives = shownPaths.ToList();
             _widgetId = widgetId;
             _config = config;
             SelectedWidget = widgetId;
@@ -120,7 +122,7 @@ namespace DiskSpaceMonitor.Views
                 Tabs.Items.Remove(tab);
             _widgetTabs.Clear();
 
-            _editor = _registry.Get(_widgetId).CreateEditor(_config, OnEditorChanged);
+            _editor = _registry.Get(_widgetId).CreateEditor(_config, OnEditorChanged, _shownDrives);
             foreach (var tab in _editor.Tabs)
             {
                 var item = new TabItem { Header = tab.Header, Content = tab.Content };

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -15,6 +16,8 @@ namespace DiskSpaceMonitor.Widgets.Circular
         public string Id => "Circular";
 
         public string DisplayName => "Circular gauge";
+
+        public bool ShowsAllDrives => false;
 
         public IWidgetView CreateView() => new CircularView();
 
@@ -39,7 +42,8 @@ namespace DiskSpaceMonitor.Widgets.Circular
         public JsonNode WriteConfig(IWidgetConfig config)
             => JsonSerializer.SerializeToNode((CircularConfig)config, Options)!;
 
-        public IWidgetConfigEditor CreateEditor(IWidgetConfig initial, Action onChanged)
-            => new CircularConfigEditor((CircularConfig)initial, onChanged);
+        public IWidgetConfigEditor CreateEditor(IWidgetConfig initial, Action onChanged,
+            IReadOnlyList<string> shownDrives)
+            => new CircularConfigEditor((CircularConfig)initial, onChanged);   // single-drive: shownDrives unused
     }
 }

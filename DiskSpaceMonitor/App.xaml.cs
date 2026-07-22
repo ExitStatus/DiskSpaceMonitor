@@ -11,6 +11,7 @@ using DiskSpaceMonitor.Settings;
 using DiskSpaceMonitor.Startup;
 using DiskSpaceMonitor.Widgets;
 using DiskSpaceMonitor.Widgets.Circular;
+using DiskSpaceMonitor.Widgets.Concentric;
 using DiskSpaceMonitor.Views;
 
 namespace DiskSpaceMonitor
@@ -22,7 +23,7 @@ namespace DiskSpaceMonitor
     public partial class App : Application
     {
         private readonly List<MainWindow> _windows = new();
-        private readonly WidgetRegistry _registry = new(new CircularWidget());
+        private readonly WidgetRegistry _registry = new(new CircularWidget(), new ConcentricWidget());
 
         private ISettingsStore _store = null!;
         private IDriveReader _driveReader = null!;
@@ -31,6 +32,7 @@ namespace DiskSpaceMonitor
         private WidgetSettings _settings = null!;
         private CtrlHook? _ctrlHook;
         private DispatcherTimer? _trimTimer;
+        private bool _topologyShowsAll;   // what _windows is currently built for
 
         /// <summary>The running application instance.</summary>
         public static App Instance => (App)Current;
@@ -54,8 +56,7 @@ namespace DiskSpaceMonitor
             if (_settings.Drives.Count == 0)
                 _settings.Drives.Add(new DriveWidgetConfig { DrivePath = _catalog.BootDrivePath });
 
-            foreach (var cfg in _settings.Drives.ToList())
-                ShowWidget(cfg);
+            RebuildWindows(_registry.Get(_settings.Style).ShowsAllDrives);
 
             _store.Save(_settings);
 
@@ -119,9 +120,44 @@ namespace DiskSpaceMonitor
                 cfg.Top = spot.Y;
             }
 
-            var window = new MainWindow(_settings, cfg, _driveReader, _registry);
+            var window = new MainWindow(_settings, cfg, _driveReader, _registry, showsAllDrives: false);
             _windows.Add(window);
             window.Show();
+        }
+
+        /// <summary>
+        /// Tear down and recreate the widget windows for the given topology: one window per drive
+        /// (single-drive widget), or a single window fed every drive (multi-drive widget). Safe
+        /// because the app uses OnExplicitShutdown, so closing all windows never exits.
+        /// </summary>
+        private void RebuildWindows(bool showsAllDrives)
+        {
+            foreach (var window in _windows.ToList())
+                window.Close();
+            _windows.Clear();
+
+            if (showsAllDrives)
+            {
+                _settings.SingleInstance ??= new DriveWidgetConfig { DrivePath = "", Size = 240 };
+                var single = _settings.SingleInstance;
+                if (double.IsNaN(single.Left) || double.IsNaN(single.Top))
+                {
+                    var spot = FindFreeSpot(single.Size);
+                    single.Left = spot.X;
+                    single.Top = spot.Y;
+                }
+
+                var window = new MainWindow(_settings, single, _driveReader, _registry, showsAllDrives: true);
+                _windows.Add(window);
+                window.Show();
+            }
+            else
+            {
+                foreach (var cfg in _settings.Drives.ToList())
+                    ShowWidget(cfg);
+            }
+
+            _topologyShowsAll = showsAllDrives;
         }
 
         /// <summary>Screen bounds of every widget except <paramref name="self"/>.</summary>
@@ -172,10 +208,11 @@ namespace DiskSpaceMonitor
         {
             var factory = _registry.Get(_settings.Style);
 
-            // Snapshot the current widget/config/opacity so a Cancel can revert the live preview.
+            // Snapshot for cancel-revert. Capture the size now — a preview rebuild may close 'source'.
             string savedWidget = _settings.Style;
             IWidgetConfig savedConfig = factory.ReadConfig(_settings.StyleConfig);
             double savedOpacity = _settings.WidgetOpacity;
+            double newWidgetSize = source.Width;
 
             var shown = _settings.Drives.Select(d => d.DrivePath).ToList();
             var dialog = new SettingsWindow(
@@ -199,22 +236,38 @@ namespace DiskSpaceMonitor
                 _settings.StyleConfig = _registry.Get(dialog.SelectedWidget).WriteConfig(dialog.SelectedConfig) as JsonObject;
                 _settings.WidgetOpacity = dialog.WidgetOpacity;
 
+                // Match the window topology to the chosen widget before reconciling drives.
+                bool targetShowsAll = _registry.Get(_settings.Style).ShowsAllDrives;
+                if (targetShowsAll != _topologyShowsAll)
+                    RebuildWindows(targetShowsAll);
+
+                ApplyDriveSelection(dialog.SelectedDrivePaths, newWidgetSize);
+
                 foreach (var window in _windows)
                     window.ApplySettings();
 
-                ApplyDriveSelection(dialog.SelectedDrivePaths, source.Width);
+                _store.Save(_settings);
             }
             else
             {
-                // Cancelled / closed: undo the live preview on every instance.
+                // Cancelled / closed: restore the saved topology + widget on every window.
+                bool savedShowsAll = _registry.Get(savedWidget).ShowsAllDrives;
+                if (savedShowsAll != _topologyShowsAll)
+                    RebuildWindows(savedShowsAll);
                 foreach (var window in _windows)
                     window.ApplyWidget(savedWidget, savedConfig, savedOpacity);
             }
         }
 
-        /// <summary>Apply an edited widget/config/opacity to every instance immediately (live preview).</summary>
+        /// <summary>Apply an edited widget/config/opacity to the live windows immediately (live
+        /// preview). Rebuilds the window topology first if the previewed widget's instancing differs.
+        /// Mutates only windows — never <c>_settings</c> — so Cancel can revert cleanly.</summary>
         private void PreviewWidget(string widgetId, IWidgetConfig config, double widgetOpacity)
         {
+            bool showsAll = _registry.Get(widgetId).ShowsAllDrives;
+            if (showsAll != _topologyShowsAll)
+                RebuildWindows(showsAll);
+
             foreach (var window in _windows)
                 window.ApplyWidget(widgetId, config, widgetOpacity);
         }
@@ -222,29 +275,42 @@ namespace DiskSpaceMonitor
         private void ApplyDriveSelection(IReadOnlyList<string> desired, double newWidgetSize)
         {
             if (desired.Count == 0)
-                return; // never leave zero widgets
+                return; // never leave zero drives
 
-            // Close widgets for drives no longer selected.
-            foreach (var window in _windows.ToList())
+            if (_topologyShowsAll)
             {
-                if (!desired.Contains(window.Config.DrivePath))
-                {
-                    _windows.Remove(window);
-                    _settings.Drives.Remove(window.Config);
-                    window.Close();
-                }
+                // Single multi-drive window: reconcile the drive list; the window re-reads it.
+                _settings.Drives.RemoveAll(d => !desired.Contains(d.DrivePath));
+                var have = _settings.Drives.Select(d => d.DrivePath).ToHashSet();
+                foreach (var path in desired)
+                    if (have.Add(path))
+                        _settings.Drives.Add(new DriveWidgetConfig { DrivePath = path, Size = newWidgetSize });
+
+                foreach (var window in _windows)
+                    window.RefreshNow();
             }
-
-            // Open widgets for newly selected drives.
-            var current = _settings.Drives.Select(d => d.DrivePath).ToHashSet();
-            foreach (var path in desired)
+            else
             {
-                if (current.Add(path))
+                // One window per drive: close removed, open added.
+                foreach (var window in _windows.ToList())
                 {
-                    // New widgets inherit the size of the one that opened Settings.
-                    var cfg = new DriveWidgetConfig { DrivePath = path, Size = newWidgetSize };
-                    _settings.Drives.Add(cfg);
-                    ShowWidget(cfg);
+                    if (!desired.Contains(window.Config.DrivePath))
+                    {
+                        _windows.Remove(window);
+                        _settings.Drives.Remove(window.Config);
+                        window.Close();
+                    }
+                }
+
+                var current = _settings.Drives.Select(d => d.DrivePath).ToHashSet();
+                foreach (var path in desired)
+                {
+                    if (current.Add(path))
+                    {
+                        var cfg = new DriveWidgetConfig { DrivePath = path, Size = newWidgetSize };
+                        _settings.Drives.Add(cfg);
+                        ShowWidget(cfg);
+                    }
                 }
             }
 

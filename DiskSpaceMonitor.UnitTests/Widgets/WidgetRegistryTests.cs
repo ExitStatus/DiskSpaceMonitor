@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
 using DiskSpaceMonitor.Widgets;
 using DiskSpaceMonitor.Widgets.Circular;
+using DiskSpaceMonitor.Widgets.Concentric;
 using FluentAssertions;
 
 namespace DiskSpaceMonitor.UnitTests.Widgets
@@ -15,11 +17,13 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         {
             public string Id => "Fake";
             public string DisplayName => "Fake style";
+            public bool ShowsAllDrives => false;
             public IWidgetView CreateView() => throw new NotSupportedException();
             public IWidgetConfig DefaultConfig() => throw new NotSupportedException();
             public IWidgetConfig ReadConfig(JsonNode? json) => throw new NotSupportedException();
             public JsonNode WriteConfig(IWidgetConfig config) => throw new NotSupportedException();
-            public IWidgetConfigEditor CreateEditor(IWidgetConfig initial, Action onChanged) => throw new NotSupportedException();
+            public IWidgetConfigEditor CreateEditor(IWidgetConfig initial, Action onChanged,
+                IReadOnlyList<string> shownDrives) => throw new NotSupportedException();
         }
 
         private static WidgetRegistry Build() => new(new CircularWidget(), new FakeFactory());
@@ -58,6 +62,16 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
 
             registry.Contains("Fake").Should().BeTrue();
             registry.Contains("nope").Should().BeFalse();
+        }
+
+        [Test]
+        public void RealWidgets_ExposeCorrectInstancing()
+        {
+            var registry = new WidgetRegistry(new CircularWidget(), new ConcentricWidget());
+
+            registry.All.Select(f => f.Id).Should().Equal("Circular", "Concentric");
+            registry.Get("Circular").ShowsAllDrives.Should().BeFalse();
+            registry.Get("Concentric").ShowsAllDrives.Should().BeTrue();
         }
     }
 }

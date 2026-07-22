@@ -70,6 +70,27 @@ namespace DiskSpaceMonitor.UnitTests.Settings
         }
 
         [Test]
+        public void SaveThenLoad_RoundTripsSingleInstancePlacement()
+        {
+            var store = new JsonSettingsStore(_path);
+            var original = new WidgetSettings
+            {
+                Style = "Concentric",
+                SingleInstance = new DriveWidgetConfig { DrivePath = "", Left = 50, Top = 60, Size = 260 },
+                Drives = { new DriveWidgetConfig { DrivePath = "C:\\", Left = 10, Top = 20, Size = 200 } },
+            };
+
+            store.Save(original);
+            var loaded = store.Load();
+
+            loaded.Style.Should().Be("Concentric");
+            loaded.SingleInstance.Should().NotBeNull();
+            loaded.SingleInstance!.Left.Should().Be(50);
+            loaded.SingleInstance.Top.Should().Be(60);
+            loaded.SingleInstance.Size.Should().Be(260);
+        }
+
+        [Test]
         public void Save_CreatesDirectoryIfMissing()
         {
             var store = new JsonSettingsStore(_path);

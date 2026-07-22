@@ -23,6 +23,11 @@ namespace DiskSpaceMonitor.Settings
         /// <summary>Opaque configuration blob for the selected style; owned by the style.</summary>
         public JsonObject? StyleConfig { get; set; }
 
+        /// <summary>Placement/size of the single window used by a multi-drive widget (e.g. Concentric).
+        /// Null until first used. Kept separate from <see cref="Drives"/> so per-drive gauge positions
+        /// are preserved when switching widgets.</summary>
+        public DriveWidgetConfig? SingleInstance { get; set; }
+
         // --- Legacy single-widget fields (pre multi-drive). Migrated on load. ---
         [JsonInclude, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public double? Left { get; set; }

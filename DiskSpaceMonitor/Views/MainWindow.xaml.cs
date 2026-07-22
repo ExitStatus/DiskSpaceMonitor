@@ -25,12 +25,14 @@ namespace DiskSpaceMonitor.Views
         private readonly DriveWidgetConfig _config;
         private readonly IDriveReader _driveReader;
         private readonly WidgetRegistry _registry;
+        private readonly bool _showsAllDrives;   // true = this window renders every drive (multi-drive widget)
         private readonly DispatcherTimer _diskTimer;
         private readonly DispatcherTimer _inputTimer;
 
         // The live widget view hosted in WidgetHost; rebuilt when the widget changes.
         private IWidgetView? _view;
         private string? _widgetId;
+        private bool _viewInitialized;   // an explicit ApplyWidget(...) push wins over OnLoaded's self-init
 
         private IntPtr _hwnd;
         private bool _clickThrough;
@@ -48,8 +50,12 @@ namespace DiskSpaceMonitor.Views
         /// <summary>The drive/placement this window is bound to.</summary>
         public DriveWidgetConfig Config => _config;
 
+        // Under SizeToContent the Width/Height properties are NaN; fall back to the laid-out size.
+        private double CurrentWidth => double.IsNaN(Width) ? ActualWidth : Width;
+        private double CurrentHeight => double.IsNaN(Height) ? ActualHeight : Height;
+
         public MainWindow(WidgetSettings settings, DriveWidgetConfig config, IDriveReader driveReader,
-            WidgetRegistry registry)
+            WidgetRegistry registry, bool showsAllDrives = false)
         {
             InitializeComponent();
 
@@ -57,6 +63,11 @@ namespace DiskSpaceMonitor.Views
             _config = config;
             _driveReader = driveReader;
             _registry = registry;
+            _showsAllDrives = showsAllDrives;
+
+            // The multi-drive instance shows all drives, so "Hide this drive" is meaningless there.
+            if (showsAllDrives)
+                HideDriveItem.Visibility = Visibility.Collapsed;
 
             Width = Height = Clamp(config.Size);
 
@@ -92,12 +103,15 @@ namespace DiskSpaceMonitor.Views
             // (e.g. a monitor was disconnected or rearranged).
             if (WorkAreaBounds() is Rect vb)
             {
-                var (cl, ct) = WidgetLayout.Constrain(Left, Top, Width, Height, vb);
+                var (cl, ct) = WidgetLayout.Constrain(Left, Top, CurrentWidth, CurrentHeight, vb);
                 Left = cl;
                 Top = ct;
             }
 
-            ApplyWidget();
+            // If App already pushed a widget (e.g. a live-preview rebuild created this window),
+            // don't overwrite it with the saved settings here.
+            if (!_viewInitialized)
+                ApplyWidget();
             _diskTimer.Start();
             // _inputTimer is started on demand by SetInteractive (Ctrl held).
         }
@@ -275,7 +289,7 @@ namespace DiskSpaceMonitor.Views
             if (!_dragging)
                 return;
 
-            double w = Width, h = Height;
+            double w = CurrentWidth, h = CurrentHeight;
 
             // Absolute mouse position in Left/Top coordinate space, valid even as
             // the window moves (local position is relative to the current origin).
@@ -470,6 +484,8 @@ namespace DiskSpaceMonitor.Views
         /// </summary>
         public void ApplyWidget(string widgetId, IWidgetConfig config, double widgetOpacity)
         {
+            _viewInitialized = true;
+
             if (_view is null || widgetId != _widgetId)
             {
                 _widgetId = widgetId;
@@ -485,14 +501,30 @@ namespace DiskSpaceMonitor.Views
             RefreshDisk();
         }
 
+        /// <summary>Force an immediate re-read + re-render (used when the drive set changes).</summary>
+        public void RefreshNow() => RefreshDisk();
+
         private TimeSpan RefreshInterval()
             => TimeSpan.FromSeconds(Math.Clamp(_settings.RefreshSeconds, 1, 3600));
 
         private void RefreshDisk()
         {
-            var space = _driveReader.Read(_config.DrivePath);
-            if (space != null)
-                _view?.Update(space);
+            if (_view is null)
+                return;
+
+            if (_showsAllDrives)
+            {
+                var spaces = new List<DriveSpace>();
+                foreach (var drive in _settings.Drives)
+                    if (_driveReader.Read(drive.DrivePath) is { } s)
+                        spaces.Add(s);
+                if (spaces.Count > 0)
+                    _view.Update(spaces);
+            }
+            else if (_driveReader.Read(_config.DrivePath) is { } space)
+            {
+                _view.Update(new[] { space });
+            }
         }
 
         // --- Persistence -----------------------------------------------------
@@ -501,7 +533,7 @@ namespace DiskSpaceMonitor.Views
         {
             _config.Left = Left;
             _config.Top = Top;
-            _config.Size = Width;
+            _config.Size = CurrentWidth;   // NaN-safe under SizeToContent (won't corrupt JSON)
             App.Instance.SaveSettings();
         }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 using DiskSpaceMonitor.Drives;
@@ -16,7 +17,11 @@ namespace DiskSpaceMonitor.Widgets.Circular
 
         public FrameworkElement View => _gauge;
 
-        public void Update(DriveSpace space) => _gauge.Update(space);
+        public void Update(IReadOnlyList<DriveSpace> drives)
+        {
+            if (drives.Count > 0)
+                _gauge.Update(drives[0]);
+        }
 
         public void Apply(IWidgetConfig config)
         {

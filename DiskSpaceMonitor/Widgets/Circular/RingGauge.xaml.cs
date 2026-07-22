@@ -97,35 +97,7 @@ namespace DiskSpaceMonitor.Widgets.Circular
             => new(Color.FromArgb((byte)(alpha * 255), _text.R, _text.G, _text.B));
 
         private void UpdateArc(double fraction)
-        {
-            if (fraction <= 0.0005)
-            {
-                UsedArc.Data = null;
-                return;
-            }
-
-            // Cap just below a full turn so the arc's start and end points don't
-            // coincide (which would collapse the ArcSegment).
-            double angleDeg = Math.Min(fraction, 0.9999) * 360.0;
-            double angleRad = angleDeg * Math.PI / 180.0;
-
-            // Angle measured clockwise from 12 o'clock.
-            var start = new Point(Cx, Cy - Radius);
-            var end = new Point(
-                Cx + Radius * Math.Sin(angleRad),
-                Cy - Radius * Math.Cos(angleRad));
-
-            var figure = new PathFigure { StartPoint = start, IsClosed = false };
-            figure.Segments.Add(new ArcSegment
-            {
-                Point = end,
-                Size = new Size(Radius, Radius),
-                IsLargeArc = angleDeg > 180,
-                SweepDirection = SweepDirection.Clockwise
-            });
-
-            UsedArc.Data = new PathGeometry(new[] { figure });
-        }
+            => UsedArc.Data = RingArc.Build(new Point(Cx, Cy), Radius, fraction);
 
         private Color ColorFor(DiskFillLevel level) => level switch
         {
