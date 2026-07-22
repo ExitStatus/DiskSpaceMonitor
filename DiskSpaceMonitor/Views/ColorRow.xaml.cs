@@ -5,9 +5,13 @@ using System.Windows.Media;
 
 namespace DiskSpaceMonitor.Views
 {
-    /// <summary>A compact colour editor: label + swatch + R/G/B sliders.</summary>
+    /// <summary>
+    /// A compact colour editor: label + swatch + editable "#RRGGBB" text box + a pipette button
+    /// that opens the HSB picker. The hex box supports copy/paste; the picker previews live.
+    /// </summary>
     public partial class ColorRow : UserControl
     {
+        private Color _color = Colors.Gray;
         private bool _suspend;
 
         /// <summary>Raised (only on user edits) with the new colour.</summary>
@@ -24,30 +28,63 @@ namespace DiskSpaceMonitor.Views
             set => LabelText.Text = value;
         }
 
+        /// <summary>
+        /// The current colour. Setting it programmatically updates the UI without raising
+        /// <see cref="ColorChanged"/> (so callers can seed a row silently).
+        /// </summary>
         public Color Color
         {
-            get => Color.FromRgb((byte)RSlider.Value, (byte)GSlider.Value, (byte)BSlider.Value);
+            get => _color;
             set
             {
-                _suspend = true;
-                RSlider.Value = value.R;
-                GSlider.Value = value.G;
-                BSlider.Value = value.B;
-                _suspend = false;
-                UpdateSwatch();
+                _color = value;
+                SyncUi();
             }
         }
 
-        private void OnSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        // Reflect _color into the swatch and hex box without re-triggering change events.
+        private void SyncUi()
         {
-            if (SwatchBrush == null)
-                return; // during InitializeComponent
+            bool prev = _suspend;
+            _suspend = true;
+            HexBox.Text = ColorUtil.ToHex(_color);
+            _suspend = prev;
 
-            UpdateSwatch();
-            if (!_suspend)
-                ColorChanged?.Invoke(Color);
+            if (SwatchBrush != null)
+                SwatchBrush.Color = _color;
         }
 
-        private void UpdateSwatch() => SwatchBrush.Color = Color;
+        private void OnHexChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_suspend || SwatchBrush == null)
+                return;
+
+            if (ColorUtil.TryParse(HexBox.Text, out var c))
+            {
+                _color = c;
+                SwatchBrush.Color = c;
+                ColorChanged?.Invoke(c);
+            }
+        }
+
+        private void OnPipetteClick(object sender, RoutedEventArgs e)
+        {
+            var original = _color;
+
+            var dialog = new HsvColorPickerDialog(_color) { Owner = Window.GetWindow(this) };
+            dialog.LiveColorChanged += Apply;
+
+            bool committed = dialog.ShowDialog() == true;
+            if (!committed)
+                Apply(original);   // revert the live preview
+        }
+
+        // Apply a colour chosen in the picker: update the UI and raise the live change.
+        private void Apply(Color c)
+        {
+            _color = c;
+            SyncUi();
+            ColorChanged?.Invoke(c);
+        }
     }
 }

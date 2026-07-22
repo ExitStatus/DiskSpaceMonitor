@@ -4,31 +4,31 @@
     <Grid Margin="0,5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="90"/>
-            <ColumnDefinition Width="26"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
         <TextBlock x:Name="LabelText" Grid.Column="0" VerticalAlignment="Center"
                    FontSize="12" TextTrimming="CharacterEllipsis"/>
 
-        <Border Grid.Column="1" Width="18" Height="18" CornerRadius="3"
-                BorderThickness="1" BorderBrush="#80888888"
-                HorizontalAlignment="Left" VerticalAlignment="Center">
+        <Border Grid.Column="1" Width="22" Height="22" CornerRadius="3"
+                BorderThickness="1" BorderBrush="#80888888" Margin="0,0,8,0"
+                VerticalAlignment="Center">
             <Border.Background>
                 <SolidColorBrush x:Name="SwatchBrush"/>
             </Border.Background>
         </Border>
 
-        <Slider x:Name="RSlider" Grid.Column="2" Minimum="0" Maximum="255"
-                Margin="5,0" MinWidth="70" VerticalAlignment="Center" ToolTip="Red"
-                ValueChanged="OnSliderChanged"/>
-        <Slider x:Name="GSlider" Grid.Column="3" Minimum="0" Maximum="255"
-                Margin="5,0" MinWidth="70" VerticalAlignment="Center" ToolTip="Green"
-                ValueChanged="OnSliderChanged"/>
-        <Slider x:Name="BSlider" Grid.Column="4" Minimum="0" Maximum="255"
-                Margin="5,0" MinWidth="70" VerticalAlignment="Center" ToolTip="Blue"
-                ValueChanged="OnSliderChanged"/>
+        <TextBox x:Name="HexBox" Grid.Column="2" VerticalAlignment="Center"
+                 VerticalContentAlignment="Center" FontFamily="Consolas"
+                 MaxLength="7" TextChanged="OnHexChanged"/>
+
+        <Button x:Name="PipetteButton" Grid.Column="3" Margin="8,0,0,0" Padding="7,4"
+                Click="OnPipetteClick" ToolTip="Pick a colour…">
+            <Path Width="16" Height="16" Stretch="Uniform"
+                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                  Data="M17.66 5.41l.92.92-2.69 2.69-.92-.92 2.69-2.69M17.67 3c-.26 0-.51.1-.71.29l-3.12 3.12-1.93-1.91-1.41 1.41 1.42 1.42L3 16.25V21h4.75l8.92-8.92 1.42 1.42 1.41-1.41-1.92-1.92 3.12-3.12c.4-.4.4-1.03.01-1.42l-2.34-2.34c-.2-.19-.45-.29-.71-.29zM6.92 19L5 17.08l8.06-8.06 1.92 1.92L6.92 19z"/>
+        </Button>
     </Grid>
 </UserControl>

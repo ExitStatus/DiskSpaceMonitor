@@ -21,7 +21,12 @@ namespace DiskSpaceMonitor.Widgets.Concentric
 
         private Slider _thickness = null!;
         private Slider _trackOpacity = null!;
+        private Slider _lowThreshold = null!;
+        private Slider _criticalThreshold = null!;
         private ColorRow _textRow = null!;
+        private ColorRow _healthyRow = null!;
+        private ColorRow _warningRow = null!;
+        private ColorRow _criticalRow = null!;
         private bool _ready;
 
         public ConcentricConfigEditor(ConcentricConfig initial, Action onChanged,
@@ -50,7 +55,12 @@ namespace DiskSpaceMonitor.Widgets.Concentric
             {
                 RingThickness = _thickness.Value,
                 TrackOpacity = _trackOpacity.Value,
+                LowThresholdPercent = _lowThreshold.Value,
+                CriticalThresholdPercent = _criticalThreshold.Value,
                 TextColor = ColorUtil.ToHex(_textRow.Color),
+                HealthyColor = ColorUtil.ToHex(_healthyRow.Color),
+                WarningColor = ColorUtil.ToHex(_warningRow.Color),
+                CriticalColor = ColorUtil.ToHex(_criticalRow.Color),
                 DriveColors = colours,
             };
         }
@@ -120,25 +130,69 @@ namespace DiskSpaceMonitor.Widgets.Concentric
             trackGrid.Children.Add(trackValue);
             panel.Children.Add(trackGrid);
 
-            panel.Children.Add(new TextBlock { Text = "Label text", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
-            _textRow = new ColorRow { Label = "Text", Color = ColorUtil.Parse(initial.TextColor, Colors.White) };
-            _textRow.ColorChanged += _ => Raise();
-            panel.Children.Add(_textRow);
+            _lowThreshold = AddPercentSlider(panel,
+                "Chip turns 'low' when free space drops below", initial.LowThresholdPercent);
+            _criticalThreshold = AddPercentSlider(panel,
+                "Chip turns 'critical' when free space drops below", initial.CriticalThresholdPercent);
 
             return panel;
+        }
+
+        /// <summary>Appends a captioned 1–90% slider (with a live "NN%" readout) and returns it.</summary>
+        private Slider AddPercentSlider(StackPanel panel, string caption, double initial)
+        {
+            panel.Children.Add(new TextBlock { Text = caption, FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var slider = new Slider
+            {
+                Minimum = 1,
+                Maximum = 90,
+                SmallChange = 1,
+                LargeChange = 5,
+                VerticalAlignment = VerticalAlignment.Center,
+                Value = Math.Clamp(initial, 1, 90),
+            };
+            var value = new TextBlock
+            {
+                Width = 44,
+                TextAlignment = TextAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                Text = $"{slider.Value:0}%",
+            };
+            slider.ValueChanged += (_, e) => { value.Text = $"{e.NewValue:0}%"; Raise(); };
+            Grid.SetColumn(slider, 0);
+            Grid.SetColumn(value, 1);
+            grid.Children.Add(slider);
+            grid.Children.Add(value);
+            panel.Children.Add(grid);
+            return slider;
         }
 
         private FrameworkElement BuildColours(ConcentricConfig initial, IReadOnlyList<string> shownDrives)
         {
             var panel = new StackPanel { Margin = new Thickness(6, 12, 6, 6) };
 
+            // Label text colour.
+            panel.Children.Add(SubHeading("Label text", 0));
+            _textRow = AddColorRow(panel, "Text", ColorUtil.Parse(initial.TextColor, Colors.White));
+
+            // Status colours for the label chips (independent of the drive set).
+            panel.Children.Add(SubHeading("Chip status", 12));
+            _healthyRow = AddColorRow(panel, "Healthy", ColorUtil.Parse(initial.HealthyColor, Color.FromRgb(0x4C, 0xAF, 0x50)));
+            _warningRow = AddColorRow(panel, "Low", ColorUtil.Parse(initial.WarningColor, Color.FromRgb(0xFF, 0xB3, 0x00)));
+            _criticalRow = AddColorRow(panel, "Critical", ColorUtil.Parse(initial.CriticalColor, Color.FromRgb(0xF4, 0x43, 0x36)));
+
+            // Per-drive ring colours.
+            panel.Children.Add(SubHeading("Drive ring colours", 12));
             if (shownDrives.Count == 0)
             {
                 panel.Children.Add(new TextBlock { Text = "No drives selected.", Opacity = 0.6, FontSize = 12 });
             }
             else
             {
-                panel.Children.Add(BuildRgbHeader());
                 for (int i = 0; i < shownDrives.Count; i++)
                 {
                     var path = shownDrives[i];
@@ -153,27 +207,20 @@ namespace DiskSpaceMonitor.Widgets.Concentric
             return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel };
         }
 
-        // Column headers aligned with the R/G/B sliders in each ColorRow (90 / 26 / * / * / *).
-        private static Grid BuildRgbHeader()
+        private ColorRow AddColorRow(StackPanel panel, string label, Color color)
         {
-            var header = new Grid { Margin = new Thickness(0, 0, 0, 4) };
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(26) });
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            void Head(int col, string text)
-            {
-                var tb = new TextBlock { Text = text, TextAlignment = TextAlignment.Center, FontSize = 11, Opacity = 0.7 };
-                Grid.SetColumn(tb, col);
-                header.Children.Add(tb);
-            }
-
-            Head(2, "Red");
-            Head(3, "Green");
-            Head(4, "Blue");
-            return header;
+            var row = new ColorRow { Label = label, Color = color };
+            row.ColorChanged += _ => Raise();
+            panel.Children.Add(row);
+            return row;
         }
+
+        private static TextBlock SubHeading(string text, double topMargin) => new()
+        {
+            Text = text,
+            FontSize = 12,
+            Opacity = 0.7,
+            Margin = new Thickness(0, topMargin, 0, 4),
+        };
     }
 }

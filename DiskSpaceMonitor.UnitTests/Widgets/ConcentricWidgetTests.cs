@@ -24,6 +24,11 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             c.RingThickness.Should().Be(14);
             c.TrackOpacity.Should().Be(0.2);
             c.TextColor.Should().Be("#FFFFFF");
+            c.LowThresholdPercent.Should().Be(40);
+            c.CriticalThresholdPercent.Should().Be(15);
+            c.HealthyColor.Should().Be("#4CAF50");
+            c.WarningColor.Should().Be("#FFB300");
+            c.CriticalColor.Should().Be("#F44336");
             c.DriveColors.Should().BeEmpty();
         }
 
@@ -35,6 +40,11 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
                 RingThickness = 20,
                 TrackOpacity = 0.45,
                 TextColor = "#101010",
+                LowThresholdPercent = 33,
+                CriticalThresholdPercent = 8,
+                HealthyColor = "#00FF00",
+                WarningColor = "#FFFF00",
+                CriticalColor = "#FF0000",
                 DriveColors = { ["C:\\"] = "#AABBCC", ["D:\\"] = "#112233" },
             };
 
@@ -44,6 +54,11 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             loaded.RingThickness.Should().Be(20);
             loaded.TrackOpacity.Should().Be(0.45);
             loaded.TextColor.Should().Be("#101010");
+            loaded.LowThresholdPercent.Should().Be(33);
+            loaded.CriticalThresholdPercent.Should().Be(8);
+            loaded.HealthyColor.Should().Be("#00FF00");
+            loaded.WarningColor.Should().Be("#FFFF00");
+            loaded.CriticalColor.Should().Be("#FF0000");
             loaded.DriveColors.Should().HaveCount(2);
             loaded.DriveColors["C:\\"].Should().Be("#AABBCC");
             loaded.DriveColors["D:\\"].Should().Be("#112233");

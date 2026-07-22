@@ -17,7 +17,18 @@ namespace DiskSpaceMonitor.Widgets.Concentric
         /// <summary>Colour per drive path (hex "#RRGGBB"). Drives without an entry use the palette.</summary>
         public Dictionary<string, string> DriveColors { get; set; } = new();
 
-        /// <summary>Colour of the per-ring label chips.</summary>
+        /// <summary>Colour of the per-ring label chip text.</summary>
         public string TextColor { get; set; } = "#FFFFFF";
+
+        /// <summary>Percent of free space below which a drive's chip shows the "low" colour.</summary>
+        public double LowThresholdPercent { get; set; } = 40;
+
+        /// <summary>Percent of free space below which a drive's chip shows the "critical" colour.</summary>
+        public double CriticalThresholdPercent { get; set; } = 15;
+
+        // --- Status colours for the label chips (hex "#RRGGBB"), by free-space level. ---
+        public string HealthyColor { get; set; } = "#4CAF50";
+        public string WarningColor { get; set; } = "#FFB300";
+        public string CriticalColor { get; set; } = "#F44336";
     }
 }

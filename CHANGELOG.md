@@ -10,10 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Pluggable widget styles** – the widget's visual is now chosen from a **Widget**
-  dropdown in the settings dialog. The circular gauge is the first style ("Circular
-  gauge"); a new style is added by implementing a single interface that covers its
-  display, configuration, and settings tabs. Each style's files live in their own
-  `Widgets/<Name>/` folder.
+  dropdown in the settings dialog. A new style is added by implementing a single
+  interface that covers its display, configuration, and settings tabs. Each style's
+  files live in their own `Widgets/<Name>/` folder.
+- **Concentric circles widget** – a second style: a single window that draws every
+  drive as a nested ring (innermost = first drive), each swept to that drive's
+  used %, with a per-ring label chip ("`C 90%`"). Ring thickness, a ring colour per
+  drive, and the transparency of the unused-space track are configurable. The
+  chips are coloured by the drive's status (healthy/low/critical) using the same
+  free-space thresholds as the circular gauge, with their own status colours.
+  Labels nudge apart automatically so they never overlap, and the window sizes
+  itself tightly to its content. Selecting a single-instance style collapses the
+  per-drive windows into one and back again, remembering its own position and size.
+- **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
+  box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
+  chooser with gradient slider tracks and a live preview that updates the widget as
+  you drag; **Cancel** reverts. Replaces the inline R/G/B sliders.
 
 ### Changed
 

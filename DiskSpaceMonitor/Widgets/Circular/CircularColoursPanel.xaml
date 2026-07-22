@@ -5,20 +5,6 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="6,12,6,6">
 
-            <!-- Column headers, aligned with the R/G/B sliders in each ColorRow. -->
-            <Grid Margin="0,0,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="90"/>
-                    <ColumnDefinition Width="26"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="2" Text="Red" TextAlignment="Center" FontSize="11" Opacity="0.7"/>
-                <TextBlock Grid.Column="3" Text="Green" TextAlignment="Center" FontSize="11" Opacity="0.7"/>
-                <TextBlock Grid.Column="4" Text="Blue" TextAlignment="Center" FontSize="11" Opacity="0.7"/>
-            </Grid>
-
             <views:ColorRow x:Name="BackgroundRow" Label="Background"/>
             <views:ColorRow x:Name="TrackRow" Label="Track"/>
             <views:ColorRow x:Name="HealthyRow" Label="Ring · healthy"/>

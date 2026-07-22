@@ -1,0 +1,149 @@
+<views:ThemedWindow x:Class="DiskSpaceMonitor.Views.HsvColorPickerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:DiskSpaceMonitor.Views"
+        Title="Pick a colour"
+        Width="460" SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <views:ThemedWindow.Resources>
+
+        <!-- Transparent repeat buttons so clicking the track still jumps the thumb. -->
+        <Style x:Key="TrackButton" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- A slider whose track shows a gradient (set via Background) with a white pill thumb. -->
+        <Style x:Key="GradientSlider" TargetType="Slider">
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="IsMoveToPointEnabled" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Border Height="16" CornerRadius="8"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="#40000000" BorderThickness="1"/>
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource TrackButton}" Command="Slider.DecreaseLarge"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource TrackButton}" Command="Slider.IncreaseLarge"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Width="12" Height="24" CornerRadius="3"
+                                                        Background="White" BorderBrush="#90000000" BorderThickness="1"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Static rainbow for the hue slider. -->
+        <LinearGradientBrush x:Key="HueBrush" StartPoint="0,0.5" EndPoint="1,0.5">
+            <GradientStop Color="#FF0000" Offset="0.0000"/>
+            <GradientStop Color="#FFFF00" Offset="0.1667"/>
+            <GradientStop Color="#00FF00" Offset="0.3333"/>
+            <GradientStop Color="#00FFFF" Offset="0.5000"/>
+            <GradientStop Color="#0000FF" Offset="0.6667"/>
+            <GradientStop Color="#FF00FF" Offset="0.8333"/>
+            <GradientStop Color="#FF0000" Offset="1.0000"/>
+        </LinearGradientBrush>
+
+        <!-- Boxed numeric readout on the right of each slider. -->
+        <Style x:Key="ValueBox" TargetType="Border">
+            <Setter Property="BorderBrush" Value="#40808080"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+        </Style>
+
+    </views:ThemedWindow.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Live preview swatch. -->
+            <Border Grid.Column="0" Width="104" Height="104" CornerRadius="6"
+                    BorderBrush="#50808080" BorderThickness="1" Margin="0,0,16,0"
+                    VerticalAlignment="Top">
+                <Border.Background>
+                    <SolidColorBrush x:Name="PreviewBrush"/>
+                </Border.Background>
+            </Border>
+
+            <!-- H / S / B sliders. -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="34"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Hue" Opacity="0.7" FontSize="12" VerticalAlignment="Center"/>
+                <Slider x:Name="HueSlider" Grid.Row="0" Grid.Column="1" Margin="4,8"
+                        Style="{StaticResource GradientSlider}" Background="{StaticResource HueBrush}"
+                        Minimum="0" Maximum="360" ValueChanged="OnHueChanged"/>
+                <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource ValueBox}">
+                    <TextBlock x:Name="HueValue" Width="34" TextAlignment="Right" FontSize="12"/>
+                </Border>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Sat" Opacity="0.7" FontSize="12" VerticalAlignment="Center"/>
+                <Slider x:Name="SatSlider" Grid.Row="1" Grid.Column="1" Margin="4,8"
+                        Style="{StaticResource GradientSlider}"
+                        Minimum="0" Maximum="100" ValueChanged="OnSatChanged"/>
+                <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource ValueBox}">
+                    <TextBlock x:Name="SatValue" Width="34" TextAlignment="Right" FontSize="12"/>
+                </Border>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Bri" Opacity="0.7" FontSize="12" VerticalAlignment="Center"/>
+                <Slider x:Name="BrightSlider" Grid.Row="2" Grid.Column="1" Margin="4,8"
+                        Style="{StaticResource GradientSlider}"
+                        Minimum="0" Maximum="100" ValueChanged="OnBrightChanged"/>
+                <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource ValueBox}">
+                    <TextBlock x:Name="BrightValue" Width="34" TextAlignment="Right" FontSize="12"/>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Cancel" MinWidth="72" Padding="12,5" Margin="0,0,8,0" IsCancel="True" Click="OnCancel"/>
+            <Button Content="OK" MinWidth="72" Padding="12,5" IsDefault="True" Click="OnOk"/>
+        </StackPanel>
+    </Grid>
+</views:ThemedWindow>
