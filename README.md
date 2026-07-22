@@ -14,6 +14,9 @@ several — each gauge is its own window you can place and size independently.
   free space, and the percentage free.
 - **Multiple drives** – one gauge per drive, managed from the settings dialog
   (at least one is always shown).
+- **Pluggable widget styles** – choose the widget's look from a **Widget** dropdown
+  (currently the circular gauge). New styles plug in by implementing a single
+  interface, with their own settings tabs.
 - **Always behind** – pinned to the bottom of the window Z-order; hidden from
   Alt-Tab and the taskbar; never steals focus.
 - **Transparent** – no window chrome, just a subtle dark disc behind the gauge
@@ -54,18 +57,24 @@ DiskSpaceMonitor.slnx
 DiskSpaceMonitor/              # WPF app
   App.xaml(.cs)               # composition root + window/lifecycle manager
   Drives/                     # ByteSize, DiskGauge, DriveReader, DriveCatalog, records
+  Widgets/                    # widget abstraction (IWidget, WidgetRegistry, …)
+    Circular/                 # the built-in circular gauge (view, config, editor)
   Layout/                     # WidgetLayout (snapping + collision geometry)
   Settings/                   # WidgetSettings, JsonSettingsStore
   Startup/                    # AutoStartService (HKCU Run entry)
   Interop/                    # NativeMethods, CtrlHook (Win32)
   Diagnostics/                # ErrorLog
-  Views/                      # MainWindow, RingGauge, SettingsWindow, tabs
+  Views/                      # MainWindow, SettingsWindow, shared controls
 DiskSpaceMonitor.UnitTests/   # NUnit + FluentAssertions, mirrors the app folders
 ```
 
-UI-free logic (geometry, byte formatting, gauge thresholds, settings
-load/save/migration) lives in small services behind interfaces, so it's covered
-by unit tests; the WPF views are thin.
+UI-free logic (geometry, byte formatting, gauge thresholds, widget config
+serialization, settings load/save/migration) lives in small services behind
+interfaces, so it's covered by unit tests; the WPF views are thin.
+
+**Adding a widget style:** drop a new folder under `Widgets/<Name>/` implementing
+`IWidget` (metadata, view, config codec, settings tabs) and register it in the
+`WidgetRegistry` — nothing style-specific leaks into the rest of the app.
 
 ## Requirements
 
@@ -102,16 +111,18 @@ Both are framework-dependent, so they need the .NET 10 Desktop Runtime installed
 
 ## Settings
 
-The settings dialog (⚙ button or right-click → Settings…) has four tabs:
+The settings dialog (⚙ button or right-click → Settings…) is tabbed:
 
+- **General** – auto-start at login, refresh interval, the **Widget** style
+  dropdown, and overall widget opacity.
 - **Drives** – which drives to show (at least one is always kept).
-- **Options** – refresh interval, auto-start at login, and the free-space
-  percentages at which the ring turns "low" and "critical".
-- **Appearance** – background opacity, overall opacity, and ring thickness.
-- **Colours** – the RGB colour of each part of the gauge.
+- The selected widget then contributes its own tabs. For the circular gauge:
+  - **Appearance** – background opacity, ring thickness, and the free-space
+    percentages at which the ring turns "low" and "critical".
+  - **Colours** – the RGB colour of each part of the gauge.
 
-Appearance and colour changes preview live on the widgets; **Cancel** reverts
-them, **OK** applies and saves.
+The chosen widget and its settings apply to every drive. Appearance and colour
+changes preview live on all widgets; **Cancel** reverts them, **OK** applies and saves.
 
 All of this — drives, positions, sizes, refresh interval, thresholds, opacities,
 ring thickness, and colours — is saved to:
@@ -123,7 +134,7 @@ ring thickness, and colours — is saved to:
 Delete that file to reset the widgets to defaults. A pre-multi-drive settings
 file is migrated automatically on first load.
 
-**Auto-start** is controlled by the *Options* tab. When enabled it writes a
+**Auto-start** is controlled by the *General* tab. When enabled it writes a
 per-user `Run` entry named `DiskSpaceMonitor` under
 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` pointing at the running
 executable; disabling it removes the entry. Publish to a stable location (see

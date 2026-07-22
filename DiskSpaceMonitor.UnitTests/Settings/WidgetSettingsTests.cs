@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using DiskSpaceMonitor.Settings;
 using FluentAssertions;
 
@@ -54,6 +55,46 @@ namespace DiskSpaceMonitor.UnitTests.Settings
             settings.Migrate();
 
             settings.Drives.Should().BeEmpty();
+        }
+
+        [Test]
+        public void Migrate_LegacyGlobalAppearance_FoldsIntoSharedCircularConfig()
+        {
+            var settings = new WidgetSettings
+            {
+                Drives =
+                {
+                    new DriveWidgetConfig { DrivePath = "C:\\" },
+                    new DriveWidgetConfig { DrivePath = "D:\\" },
+                },
+                BackgroundOpacity = 0.5,
+                WidgetOpacity = 0.6,
+                RingThickness = 22,
+                LowThresholdPercent = 55,
+                CriticalThresholdPercent = 25,
+                BackgroundColor = "#111111",
+                TrackColor = "#222222",
+                HealthyColor = "#333333",
+                WarningColor = "#444444",
+                CriticalColor = "#555555",
+                TextColor = "#666666",
+            };
+
+            settings.Migrate();
+
+            settings.Style.Should().Be("Circular");
+            settings.WidgetOpacity.Should().Be(0.6);   // top-level global, not nulled
+            settings.StyleConfig.Should().NotBeNull();
+            settings.StyleConfig!["RingThickness"]!.GetValue<double>().Should().Be(22);
+            settings.StyleConfig!["CriticalThresholdPercent"]!.GetValue<double>().Should().Be(25);
+            settings.StyleConfig!["BackgroundColor"]!.GetValue<string>().Should().Be("#111111");
+
+            // Appearance legacy globals cleared so they aren't re-persisted.
+            settings.BackgroundColor.Should().BeNull();
+            settings.RingThickness.Should().BeNull();
+
+            // Drives keep just drive + placement.
+            settings.Drives.Should().HaveCount(2);
         }
     }
 }

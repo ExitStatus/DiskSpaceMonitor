@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-22
+
+### Added
+
+- **Pluggable widget styles** – the widget's visual is now chosen from a **Widget**
+  dropdown in the settings dialog. The circular gauge is the first style ("Circular
+  gauge"); a new style is added by implementing a single interface that covers its
+  display, configuration, and settings tabs. Each style's files live in their own
+  `Widgets/<Name>/` folder.
+
+### Changed
+
+- **Reorganised the settings dialog** into **General · Drives · <widget's own tabs>**.
+  General holds auto-start, refresh interval, the Widget dropdown, and overall
+  opacity; the chosen widget contributes its own tabs (for Circular: **Appearance**
+  and **Colours**). The low/critical thresholds moved from *Options* to *Appearance*.
+- The chosen widget and all its settings apply to **every** drive; live preview now
+  updates all instances together, and Cancel reverts them.
+- Appearance is now stored under a per-widget config block in `settings.json`;
+  pre-1.1 settings files are migrated automatically on first load, preserving the
+  existing look.
+
 ## [1.0.0] - 2026-07-21
 
 First public release.
@@ -43,4 +65,5 @@ First public release.
   gauge thresholds, settings load/save/migration).
 - **Folder publish profile** targeting `C:\Tools\DiskSpaceMonitor`.
 
+[1.1.0]: https://github.com/ExitStatus/DiskSpaceMonitor/releases/tag/v1.1.0
 [1.0.0]: https://github.com/ExitStatus/DiskSpaceMonitor/releases/tag/v1.0.0

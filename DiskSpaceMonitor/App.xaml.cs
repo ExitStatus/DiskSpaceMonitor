@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Threading;
 using DiskSpaceMonitor.Diagnostics;
@@ -8,6 +9,8 @@ using DiskSpaceMonitor.Drives;
 using DiskSpaceMonitor.Interop;
 using DiskSpaceMonitor.Settings;
 using DiskSpaceMonitor.Startup;
+using DiskSpaceMonitor.Widgets;
+using DiskSpaceMonitor.Widgets.Circular;
 using DiskSpaceMonitor.Views;
 
 namespace DiskSpaceMonitor
@@ -19,6 +22,7 @@ namespace DiskSpaceMonitor
     public partial class App : Application
     {
         private readonly List<MainWindow> _windows = new();
+        private readonly WidgetRegistry _registry = new(new CircularWidget());
 
         private ISettingsStore _store = null!;
         private IDriveReader _driveReader = null!;
@@ -115,7 +119,7 @@ namespace DiskSpaceMonitor
                 cfg.Top = spot.Y;
             }
 
-            var window = new MainWindow(_settings, cfg, _driveReader);
+            var window = new MainWindow(_settings, cfg, _driveReader, _registry);
             _windows.Add(window);
             window.Show();
         }
@@ -166,13 +170,18 @@ namespace DiskSpaceMonitor
 
         public void OpenSettings(MainWindow source)
         {
-            // Remember the saved appearance so a Cancel can revert the live preview.
-            var saved = AppearancePreview.FromSettings(_settings);
+            var factory = _registry.Get(_settings.Style);
+
+            // Snapshot the current widget/config/opacity so a Cancel can revert the live preview.
+            string savedWidget = _settings.Style;
+            IWidgetConfig savedConfig = factory.ReadConfig(_settings.StyleConfig);
+            double savedOpacity = _settings.WidgetOpacity;
 
             var shown = _settings.Drives.Select(d => d.DrivePath).ToList();
             var dialog = new SettingsWindow(
                 shown, _settings.RefreshSeconds, _autoStart.IsEnabled(),
-                saved, _catalog, PreviewAppearance);
+                _settings.Style, factory.ReadConfig(_settings.StyleConfig), _settings.WidgetOpacity,
+                _catalog, _registry, PreviewWidget);
             dialog.ShowDialog();
 
             if (dialog.ExitRequested)
@@ -184,8 +193,12 @@ namespace DiskSpaceMonitor
             if (dialog.Applied)
             {
                 _settings.RefreshSeconds = dialog.RefreshSeconds;
-                StoreAppearance(dialog.Appearance);
                 _autoStart.SetEnabled(dialog.AutoStart);
+
+                _settings.Style = dialog.SelectedWidget;
+                _settings.StyleConfig = _registry.Get(dialog.SelectedWidget).WriteConfig(dialog.SelectedConfig) as JsonObject;
+                _settings.WidgetOpacity = dialog.WidgetOpacity;
+
                 foreach (var window in _windows)
                     window.ApplySettings();
 
@@ -193,31 +206,17 @@ namespace DiskSpaceMonitor
             }
             else
             {
-                // Cancelled / closed: undo any live preview.
-                PreviewAppearance(saved);
+                // Cancelled / closed: undo the live preview on every instance.
+                foreach (var window in _windows)
+                    window.ApplyWidget(savedWidget, savedConfig, savedOpacity);
             }
         }
 
-        /// <summary>Apply an appearance snapshot to every widget immediately (live preview).</summary>
-        private void PreviewAppearance(AppearancePreview a)
+        /// <summary>Apply an edited widget/config/opacity to every instance immediately (live preview).</summary>
+        private void PreviewWidget(string widgetId, IWidgetConfig config, double widgetOpacity)
         {
             foreach (var window in _windows)
-                window.PreviewAppearance(a);
-        }
-
-        private void StoreAppearance(AppearancePreview a)
-        {
-            _settings.BackgroundOpacity = a.BackgroundOpacity;
-            _settings.WidgetOpacity = a.WidgetOpacity;
-            _settings.RingThickness = a.RingThickness;
-            _settings.LowThresholdPercent = a.LowThresholdPercent;
-            _settings.CriticalThresholdPercent = a.CriticalThresholdPercent;
-            _settings.BackgroundColor = ColorUtil.ToHex(a.Background);
-            _settings.TrackColor = ColorUtil.ToHex(a.Track);
-            _settings.HealthyColor = ColorUtil.ToHex(a.Healthy);
-            _settings.WarningColor = ColorUtil.ToHex(a.Warning);
-            _settings.CriticalColor = ColorUtil.ToHex(a.Critical);
-            _settings.TextColor = ColorUtil.ToHex(a.Text);
+                window.ApplyWidget(widgetId, config, widgetOpacity);
         }
 
         private void ApplyDriveSelection(IReadOnlyList<string> desired, double newWidgetSize)

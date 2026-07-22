@@ -5,7 +5,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using DiskSpaceMonitor.Drives;
 
-namespace DiskSpaceMonitor.Views
+namespace DiskSpaceMonitor.Widgets.Circular
 {
     public partial class RingGauge : UserControl
     {

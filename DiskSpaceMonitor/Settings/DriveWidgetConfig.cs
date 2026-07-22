@@ -1,6 +1,6 @@
 namespace DiskSpaceMonitor.Settings
 {
-    /// <summary>Persisted placement + monitored drive for a single widget window.</summary>
+    /// <summary>Persisted placement and monitored drive for a single widget instance (window).</summary>
     public sealed class DriveWidgetConfig
     {
         /// <summary>Root path of the monitored drive, e.g. "C:\\".</summary>

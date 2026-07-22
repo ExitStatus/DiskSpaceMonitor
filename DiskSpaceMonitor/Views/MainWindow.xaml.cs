@@ -12,6 +12,7 @@ using DiskSpaceMonitor.Drives;
 using DiskSpaceMonitor.Interop;
 using DiskSpaceMonitor.Layout;
 using DiskSpaceMonitor.Settings;
+using DiskSpaceMonitor.Widgets;
 
 namespace DiskSpaceMonitor.Views
 {
@@ -23,8 +24,13 @@ namespace DiskSpaceMonitor.Views
         private readonly WidgetSettings _settings;
         private readonly DriveWidgetConfig _config;
         private readonly IDriveReader _driveReader;
+        private readonly WidgetRegistry _registry;
         private readonly DispatcherTimer _diskTimer;
         private readonly DispatcherTimer _inputTimer;
+
+        // The live widget view hosted in WidgetHost; rebuilt when the widget changes.
+        private IWidgetView? _view;
+        private string? _widgetId;
 
         private IntPtr _hwnd;
         private bool _clickThrough;
@@ -42,13 +48,15 @@ namespace DiskSpaceMonitor.Views
         /// <summary>The drive/placement this window is bound to.</summary>
         public DriveWidgetConfig Config => _config;
 
-        public MainWindow(WidgetSettings settings, DriveWidgetConfig config, IDriveReader driveReader)
+        public MainWindow(WidgetSettings settings, DriveWidgetConfig config, IDriveReader driveReader,
+            WidgetRegistry registry)
         {
             InitializeComponent();
 
             _settings = settings;
             _config = config;
             _driveReader = driveReader;
+            _registry = registry;
 
             Width = Height = Clamp(config.Size);
 
@@ -89,8 +97,7 @@ namespace DiskSpaceMonitor.Views
                 Top = ct;
             }
 
-            ApplyAppearance();
-            RefreshDisk();
+            ApplyWidget();
             _diskTimer.Start();
             // _inputTimer is started on demand by SetInteractive (Ctrl held).
         }
@@ -443,26 +450,39 @@ namespace DiskSpaceMonitor.Views
 
         // --- Data ------------------------------------------------------------
 
-        /// <summary>Push changed settings (interval + appearance) into this widget.</summary>
+        /// <summary>Push changed settings (interval + the global widget/config) into this instance.</summary>
         public void ApplySettings()
         {
             _diskTimer.Interval = RefreshInterval();
-            ApplyAppearance();
-            RefreshDisk();
+            ApplyWidget();
         }
 
-        private void ApplyAppearance() => PreviewAppearance(AppearancePreview.FromSettings(_settings));
-
-        /// <summary>Apply appearance values directly (used for live preview from the dialog).</summary>
-        public void PreviewAppearance(AppearancePreview a)
+        /// <summary>Apply the current global widget + config + opacity from settings.</summary>
+        private void ApplyWidget()
         {
-            // Fade the gauge only, NOT the window — otherwise the edit overlay
+            var factory = _registry.Get(_settings.Style);
+            ApplyWidget(_settings.Style, factory.ReadConfig(_settings.StyleConfig), _settings.WidgetOpacity);
+        }
+
+        /// <summary>
+        /// Apply a widget + its config + overall opacity — for the initial load, live preview from
+        /// the dialog, and applying saved changes. Rebuilds the hosted view when the widget changes.
+        /// </summary>
+        public void ApplyWidget(string widgetId, IWidgetConfig config, double widgetOpacity)
+        {
+            if (_view is null || widgetId != _widgetId)
+            {
+                _widgetId = widgetId;
+                _view = _registry.Get(widgetId).CreateView();
+                WidgetHost.Content = _view.View;
+            }
+
+            _view.Apply(config);
+
+            // Fade the rendered visual only, NOT the window — otherwise the edit overlay
             // (resize thumbs + buttons) would fade with it and be hard to use.
-            Ring.Opacity = Math.Clamp(a.WidgetOpacity, 0.2, 1.0);
-            Ring.SetBackgroundOpacity(a.BackgroundOpacity);
-            Ring.SetThickness(a.RingThickness);
-            Ring.SetColors(a.Background, a.Track, a.Healthy, a.Warning, a.Critical, a.Text);
-            Ring.SetThresholds(a.LowThresholdPercent, a.CriticalThresholdPercent);
+            WidgetHost.Opacity = Math.Clamp(widgetOpacity, 0.2, 1.0);
+            RefreshDisk();
         }
 
         private TimeSpan RefreshInterval()
@@ -472,7 +492,7 @@ namespace DiskSpaceMonitor.Views
         {
             var space = _driveReader.Read(_config.DrivePath);
             if (space != null)
-                Ring.Update(space);
+                _view?.Update(space);
         }
 
         // --- Persistence -----------------------------------------------------

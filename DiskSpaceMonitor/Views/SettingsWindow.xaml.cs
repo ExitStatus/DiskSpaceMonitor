@@ -4,18 +4,23 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using DiskSpaceMonitor.Drives;
+using DiskSpaceMonitor.Widgets;
 
 namespace DiskSpaceMonitor.Views
 {
     public partial class SettingsWindow : ThemedWindow
     {
         private readonly List<CheckBox> _boxes = new();
+        private readonly WidgetRegistry _registry;
+        private readonly Action<string, IWidgetConfig, double> _preview;
 
-        // Apply the full appearance snapshot live to the widgets.
-        private readonly Action<AppearancePreview>? _preview;
+        private string _widgetId;
+        private IWidgetConfig _config;
+        private IWidgetConfigEditor? _editor;
+        private readonly List<TabItem> _widgetTabs = new();   // tabs contributed by the current widget
         private bool _ready;
 
-        /// <summary>User pressed OK; SelectedDrivePaths holds the chosen drives.</summary>
+        /// <summary>User pressed OK; results are valid.</summary>
         public bool Applied { get; private set; }
 
         /// <summary>User pressed Exit Application.</summary>
@@ -26,11 +31,17 @@ namespace DiskSpaceMonitor.Views
         /// <summary>Chosen refresh interval in seconds (valid once Applied).</summary>
         public int RefreshSeconds { get; private set; }
 
-        /// <summary>Chosen appearance — opacities + part colours (valid once Applied).</summary>
-        public AppearancePreview Appearance { get; private set; } = null!;
-
         /// <summary>Whether auto-start at login should be enabled (valid once Applied).</summary>
         public bool AutoStart { get; private set; }
+
+        /// <summary>Chosen widget id (valid once Applied).</summary>
+        public string SelectedWidget { get; private set; }
+
+        /// <summary>Chosen widget config (valid once Applied).</summary>
+        public IWidgetConfig SelectedConfig { get; private set; }
+
+        /// <summary>Chosen overall widget opacity (valid once Applied).</summary>
+        public double WidgetOpacity { get; private set; }
 
         private static readonly (string Label, int Seconds)[] IntervalPresets =
         {
@@ -44,49 +55,55 @@ namespace DiskSpaceMonitor.Views
         };
 
         public SettingsWindow(IReadOnlyList<string> shownPaths, int refreshSeconds, bool autoStart,
-            AppearancePreview appearance, IDriveCatalog catalog, Action<AppearancePreview> preview)
+            string widgetId, IWidgetConfig config, double widgetOpacity, IDriveCatalog catalog,
+            WidgetRegistry registry, Action<string, IWidgetConfig, double> preview)
         {
             InitializeComponent();
+            _registry = registry;
             _preview = preview;
+            _widgetId = widgetId;
+            _config = config;
+            SelectedWidget = widgetId;
+            SelectedConfig = config;
+            WidgetOpacity = widgetOpacity;
+
             AutoStartCheck.IsChecked = autoStart;
 
             foreach (var drive in catalog.GetAvailableDrives())
                 AddCheckBox(drive.Path, drive.Label, shownPaths.Contains(drive.Path));
 
-            // Include any shown drive that isn't currently ready, so it isn't
-            // silently dropped when the dialog is applied.
+            // Include any shown drive that isn't currently ready, so it isn't silently dropped.
             var listed = _boxes.Select(b => (string)b.Tag).ToHashSet();
             foreach (var path in shownPaths.Where(p => !string.IsNullOrEmpty(p) && !listed.Contains(p)))
                 AddCheckBox(path, $"{path}   (offline)", isChecked: true);
 
             PopulateIntervals(refreshSeconds);
 
-            BackgroundSlider.Value = System.Math.Clamp(appearance.BackgroundOpacity, BackgroundSlider.Minimum, BackgroundSlider.Maximum);
-            OpacitySlider.Value = System.Math.Clamp(appearance.WidgetOpacity, OpacitySlider.Minimum, OpacitySlider.Maximum);
-            ThicknessSlider.Value = System.Math.Clamp(appearance.RingThickness, ThicknessSlider.Minimum, ThicknessSlider.Maximum);
-            LowThresholdSlider.Value = System.Math.Clamp(appearance.LowThresholdPercent, LowThresholdSlider.Minimum, LowThresholdSlider.Maximum);
-            CriticalThresholdSlider.Value = System.Math.Clamp(appearance.CriticalThresholdPercent, CriticalThresholdSlider.Minimum, CriticalThresholdSlider.Maximum);
+            foreach (var factory in registry.All)
+                WidgetSelector.Items.Add(new ComboBoxItem { Content = factory.DisplayName, Tag = factory.Id });
+            SelectComboByTag(WidgetSelector, widgetId);
 
-            BackgroundRow.Color = appearance.Background;
-            TrackRow.Color = appearance.Track;
-            HealthyRow.Color = appearance.Healthy;
-            WarningRow.Color = appearance.Warning;
-            CriticalRow.Color = appearance.Critical;
-            TextRow.Color = appearance.Text;
+            OpacitySlider.Value = Math.Clamp(widgetOpacity, OpacitySlider.Minimum, OpacitySlider.Maximum);
 
-            foreach (var row in new[] { BackgroundRow, TrackRow, HealthyRow, WarningRow, CriticalRow, TextRow })
-                row.ColorChanged += _ => Preview();
-
+            BuildWidgetTabs();
             UpdateGuards();
-
-            // Live preview only takes effect after the initial values are set.
             _ready = true;
         }
 
-        private void OnBackgroundChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        // --- Widget selection + config tabs ----------------------------------
+
+        private void OnWidgetSelected(object sender, SelectionChangedEventArgs e)
         {
-            if (BackgroundValue != null)
-                BackgroundValue.Text = $"{e.NewValue * 100:0}%";
+            if (!_ready || WidgetSelector.SelectedItem is not ComboBoxItem item)
+                return;
+
+            var id = (string)item.Tag;
+            if (id == _widgetId)
+                return;
+
+            _widgetId = id;
+            _config = _registry.Get(id).DefaultConfig();
+            BuildWidgetTabs();
             Preview();
         }
 
@@ -97,48 +114,49 @@ namespace DiskSpaceMonitor.Views
             Preview();
         }
 
-        private void OnThicknessChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void BuildWidgetTabs()
         {
-            if (ThicknessValue != null)
-                ThicknessValue.Text = $"{e.NewValue:0}";
-            Preview();
+            foreach (var tab in _widgetTabs)
+                Tabs.Items.Remove(tab);
+            _widgetTabs.Clear();
+
+            _editor = _registry.Get(_widgetId).CreateEditor(_config, OnEditorChanged);
+            foreach (var tab in _editor.Tabs)
+            {
+                var item = new TabItem { Header = tab.Header, Content = tab.Content };
+                Tabs.Items.Add(item);
+                _widgetTabs.Add(item);
+            }
         }
 
-        private void OnLowThresholdChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void OnEditorChanged()
         {
-            if (LowThresholdValue != null)
-                LowThresholdValue.Text = $"{e.NewValue:0}%";
+            if (_editor == null)
+                return;
 
-            // "Low" must never sit below "critical" — nudge critical down to match.
-            if (CriticalThresholdSlider != null && CriticalThresholdSlider.Value > e.NewValue)
-                CriticalThresholdSlider.Value = e.NewValue;
-
+            _config = _editor.CurrentConfig();
             Preview();
         }
-
-        private void OnCriticalThresholdChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (CriticalThresholdValue != null)
-                CriticalThresholdValue.Text = $"{e.NewValue:0}%";
-
-            // "Critical" must never sit above "low" — nudge low up to match.
-            if (LowThresholdSlider != null && LowThresholdSlider.Value < e.NewValue)
-                LowThresholdSlider.Value = e.NewValue;
-
-            Preview();
-        }
-
-        private AppearancePreview CurrentAppearance() => new(
-            BackgroundSlider.Value, OpacitySlider.Value, ThicknessSlider.Value,
-            LowThresholdSlider.Value, CriticalThresholdSlider.Value,
-            BackgroundRow.Color, TrackRow.Color, HealthyRow.Color,
-            WarningRow.Color, CriticalRow.Color, TextRow.Color);
 
         private void Preview()
         {
             if (_ready)
-                _preview?.Invoke(CurrentAppearance());
+                _preview(_widgetId, _config, OpacitySlider.Value);
         }
+
+        private static void SelectComboByTag(ComboBox combo, string tag)
+        {
+            foreach (var item in combo.Items.OfType<ComboBoxItem>())
+            {
+                if ((string)item.Tag == tag)
+                {
+                    combo.SelectedItem = item;
+                    return;
+                }
+            }
+        }
+
+        // --- Drives + interval (global) --------------------------------------
 
         private void AddCheckBox(string path, string label, bool isChecked)
         {
@@ -189,13 +207,19 @@ namespace DiskSpaceMonitor.Views
             OkButton.IsEnabled = checkedBoxes.Count >= 1;
         }
 
+        // --- Buttons ---------------------------------------------------------
+
         private void OnOk(object sender, RoutedEventArgs e)
         {
             SelectedDrivePaths.Clear();
             SelectedDrivePaths.AddRange(_boxes.Where(b => b.IsChecked == true).Select(b => (string)b.Tag));
             RefreshSeconds = (int)((ComboBoxItem)IntervalCombo.SelectedItem).Tag;
-            Appearance = CurrentAppearance();
             AutoStart = AutoStartCheck.IsChecked == true;
+
+            SelectedWidget = _widgetId;
+            SelectedConfig = _editor != null ? _editor.CurrentConfig() : _config;
+            WidgetOpacity = OpacitySlider.Value;
+
             Applied = true;
             Close();
         }

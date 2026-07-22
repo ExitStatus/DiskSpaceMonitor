@@ -3,165 +3,73 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:DiskSpaceMonitor.Views"
         Title="Disk Space Monitor — Settings"
-        Width="540" Height="440"
+        Width="540" Height="480"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True"
         Topmost="True">
 
-    <Grid Margin="18">
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0">
+        <!-- Top-level tabs: General, then the selected widget's own tabs (added in code). -->
+        <TabControl x:Name="Tabs" Grid.Row="0">
+            <TabItem Header="General">
+                <StackPanel Margin="10">
 
-            <!-- ============================ Drives ============================ -->
+                    <CheckBox x:Name="AutoStartCheck" FontSize="13"
+                              Margin="0,0,0,14" Content="Auto-start when I log in"/>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Update every" FontSize="13" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="IntervalCombo" Grid.Column="1" HorizontalAlignment="Left" MinWidth="130"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Widget" FontSize="13" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="WidgetSelector" Grid.Column="1" HorizontalAlignment="Left"
+                                  MinWidth="180" SelectionChanged="OnWidgetSelected"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Overall opacity" FontSize="13" VerticalAlignment="Center"/>
+                        <Slider x:Name="OpacitySlider" Grid.Column="1"
+                                Minimum="0.2" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                VerticalAlignment="Center" ValueChanged="OnOpacityChanged"/>
+                        <TextBlock x:Name="OpacityValue" Grid.Column="2" Width="44"
+                                   TextAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+
             <TabItem Header="Drives">
-                <Grid Margin="6,12,6,6">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                <DockPanel Margin="10">
+                    <TextBlock DockPanel.Dock="Bottom" Text="At least one drive must be shown."
+                               Opacity="0.6" FontSize="11" Margin="0,8,0,0"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="DriveList"/>
                     </ScrollViewer>
-
-                    <!-- Inherit the themed foreground; dim it rather than hardcoding a colour. -->
-                    <TextBlock Grid.Row="1" Text="At least one drive must be shown."
-                               Opacity="0.6" FontSize="11" Margin="0,10,0,0"/>
-                </Grid>
-            </TabItem>
-
-            <!-- ============================ Options =========================== -->
-            <TabItem Header="Options">
-                <StackPanel Margin="6,16,6,6">
-
-                    <CheckBox x:Name="AutoStartCheck" FontSize="13" Margin="0,0,0,16"
-                              Content="Auto-start application when I log in"/>
-
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Update every" FontSize="13"
-                                   VerticalAlignment="Center" Width="150"/>
-                        <ComboBox x:Name="IntervalCombo" MinWidth="130"/>
-                    </StackPanel>
-
-                    <TextBlock Text="Ring turns 'low' when free space drops below" FontSize="13"
-                               Margin="0,20,0,4"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Slider x:Name="LowThresholdSlider" Grid.Column="0"
-                                Minimum="1" Maximum="90" SmallChange="1" LargeChange="5"
-                                VerticalAlignment="Center"
-                                ValueChanged="OnLowThresholdChanged"/>
-                        <TextBlock x:Name="LowThresholdValue" Grid.Column="1" Width="44"
-                                   TextAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <TextBlock Text="Ring turns 'critical' when free space drops below" FontSize="13"
-                               Margin="0,16,0,4"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Slider x:Name="CriticalThresholdSlider" Grid.Column="0"
-                                Minimum="1" Maximum="90" SmallChange="1" LargeChange="5"
-                                VerticalAlignment="Center"
-                                ValueChanged="OnCriticalThresholdChanged"/>
-                        <TextBlock x:Name="CriticalThresholdValue" Grid.Column="1" Width="44"
-                                   TextAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-                </StackPanel>
-            </TabItem>
-
-            <!-- ========================== Appearance ========================= -->
-            <TabItem Header="Appearance">
-                <StackPanel Margin="6,16,6,6">
-
-                    <TextBlock Text="Background" FontSize="13" Margin="0,0,0,4"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Slider x:Name="BackgroundSlider" Grid.Column="0"
-                                Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                                VerticalAlignment="Center"
-                                ValueChanged="OnBackgroundChanged"/>
-                        <TextBlock x:Name="BackgroundValue" Grid.Column="1" Width="44"
-                                   TextAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <TextBlock Text="Overall opacity" FontSize="13" Margin="0,16,0,4"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Slider x:Name="OpacitySlider" Grid.Column="0"
-                                Minimum="0.2" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                                VerticalAlignment="Center"
-                                ValueChanged="OnOpacityChanged"/>
-                        <TextBlock x:Name="OpacityValue" Grid.Column="1" Width="44"
-                                   TextAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <TextBlock Text="Ring thickness" FontSize="13" Margin="0,16,0,4"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Slider x:Name="ThicknessSlider" Grid.Column="0"
-                                Minimum="4" Maximum="40" SmallChange="1" LargeChange="4"
-                                VerticalAlignment="Center"
-                                ValueChanged="OnThicknessChanged"/>
-                        <TextBlock x:Name="ThicknessValue" Grid.Column="1" Width="44"
-                                   TextAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-                </StackPanel>
-            </TabItem>
-
-            <!-- ============================ Colours ========================== -->
-            <TabItem Header="Colours">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="6,12,6,6">
-
-                        <!-- Column headers, aligned with the R/G/B sliders in each ColorRow. -->
-                        <Grid Margin="0,0,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="90"/>
-                                <ColumnDefinition Width="26"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="2" Text="Red" TextAlignment="Center"
-                                       FontSize="11" Opacity="0.7"/>
-                            <TextBlock Grid.Column="3" Text="Green" TextAlignment="Center"
-                                       FontSize="11" Opacity="0.7"/>
-                            <TextBlock Grid.Column="4" Text="Blue" TextAlignment="Center"
-                                       FontSize="11" Opacity="0.7"/>
-                        </Grid>
-
-                        <views:ColorRow x:Name="BackgroundRow" Label="Background"/>
-                        <views:ColorRow x:Name="TrackRow" Label="Track"/>
-                        <views:ColorRow x:Name="HealthyRow" Label="Ring · healthy"/>
-                        <views:ColorRow x:Name="WarningRow" Label="Ring · low"/>
-                        <views:ColorRow x:Name="CriticalRow" Label="Ring · critical"/>
-                        <views:ColorRow x:Name="TextRow" Label="Text"/>
-                    </StackPanel>
-                </ScrollViewer>
+                </DockPanel>
             </TabItem>
         </TabControl>
 
-        <!-- Buttons, always below the tab control. -->
+        <!-- Buttons, always below the tabs. -->
         <Grid Grid.Row="1" Margin="0,14,0,0">
             <Button Content="Exit Application" HorizontalAlignment="Left"
                     Padding="12,5" Click="OnExitApplication"/>

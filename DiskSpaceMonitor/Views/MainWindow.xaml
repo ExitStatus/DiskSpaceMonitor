@@ -66,8 +66,8 @@
     </Window.ContextMenu>
 
     <Grid Background="Transparent">
-        <!-- The gauge fills the window and scales with it. -->
-        <local:RingGauge x:Name="Ring"/>
+        <!-- The current widget's view fills the window and scales with it. -->
+        <ContentControl x:Name="WidgetHost"/>
 
         <!-- Editing overlay: shown only while Ctrl is held and the mouse is over
              the widget. Handles resize + close. The Transparent background makes
