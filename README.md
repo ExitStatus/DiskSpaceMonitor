@@ -22,8 +22,11 @@ on a 0–100% axis).
     are all configurable. Labels nudge apart automatically so they never overlap.
   - **Bar graph** – a single window with a vertical bar per drive on a 0–100%
     (used space) axis, each bar coloured by status. Bar width, the unused-space
-    transparency, colours and thresholds are configurable, and the used and total
-    space per drive can optionally be shown on/above each bar.
+    transparency, colours and thresholds are configurable; the window resizes to
+    hug the bars (bars and the gaps between them shrink together as you narrow
+    them). The used and total space per drive can optionally be shown on/above
+    each bar — those captions auto-size to one shared size that fits the bar, and
+    rotate vertically when a bar is too narrow for horizontal text.
 - **Pluggable widget styles** – new styles plug in by implementing a single
   interface, with their own settings tabs, in their own `Widgets/<Name>/` folder.
   Each style remembers its own configuration independently.

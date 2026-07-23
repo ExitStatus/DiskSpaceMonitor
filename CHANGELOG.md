@@ -27,7 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bar width, the unused-space transparency, the track/status colours, and the
   thresholds are configurable, and optional **Show used space** / **Show total
   space** captions display the humanized used amount on each bar and the total
-  above it. The whole chart (bars and labels) scales with the window.
+  above it. The whole chart (bars and labels) scales with the window, and the
+  window resizes to hug the bars — the bars and the gaps between them shrink
+  together as the bar width is reduced, rather than leaving space at the edges.
+  The used/total captions auto-size to one shared size that fits the bar and
+  rotate 90° when a bar is too narrow for horizontal text.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as

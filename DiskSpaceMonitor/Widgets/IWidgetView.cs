@@ -19,5 +19,9 @@ namespace DiskSpaceMonitor.Widgets
 
         /// <summary>Apply configuration — used both for the initial load and for live preview.</summary>
         void Apply(IWidgetConfig config);
+
+        /// <summary>Natural width ÷ height of the content; the window sizes itself to match so it
+        /// hugs the widget. 1 = square (the default for widgets that don't care).</summary>
+        double AspectRatio => 1;
     }
 }

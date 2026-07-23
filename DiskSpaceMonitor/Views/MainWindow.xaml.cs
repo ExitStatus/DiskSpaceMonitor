@@ -429,9 +429,25 @@ namespace DiskSpaceMonitor.Views
             double mouseX = Left + local.X;
             double mouseY = Top + local.Y;
 
-            // Distance from the fixed anchor, then keep it square via the longer side.
+            // Distance from the fixed anchor.
             double width = left ? _anchorX - mouseX : mouseX - _anchorX;
             double height = top ? _anchorY - mouseY : mouseY - _anchorY;
+
+            // Non-square widget (e.g. the bar graph): resize by height and keep the content aspect,
+            // anchoring the opposite corner. (Edge snapping stays square-only.)
+            if (IsAspectLocked)
+            {
+                double a = Aspect;
+                double h = Math.Clamp(Math.Max(height, width / a), MinSize, MaxSize);
+                double w = h * a;
+                Left = left ? _anchorX - w : _anchorX;
+                Top = top ? _anchorY - h : _anchorY;
+                Width = w;
+                Height = h;
+                return;
+            }
+
+            // Square widgets: keep it square via the longer side.
             double candidate = Math.Max(width, height);
 
             // Snap edges to other widgets and stop the square growing into them.
@@ -499,10 +515,15 @@ namespace DiskSpaceMonitor.Views
             // (resize thumbs + buttons) would fade with it and be hard to use.
             WidgetHost.Opacity = Math.Clamp(widgetOpacity, 0.2, 1.0);
             RefreshDisk();
+            FitToAspect();
         }
 
         /// <summary>Force an immediate re-read + re-render (used when the drive set changes).</summary>
-        public void RefreshNow() => RefreshDisk();
+        public void RefreshNow()
+        {
+            RefreshDisk();
+            FitToAspect();
+        }
 
         private TimeSpan RefreshInterval()
             => TimeSpan.FromSeconds(Math.Clamp(_settings.RefreshSeconds, 1, 3600));
@@ -533,10 +554,47 @@ namespace DiskSpaceMonitor.Views
         {
             _config.Left = Left;
             _config.Top = Top;
-            _config.Size = CurrentWidth;   // NaN-safe under SizeToContent (won't corrupt JSON)
+            _config.Size = CurrentHeight;   // height is the user-controlled dimension; width follows aspect
             App.Instance.SaveSettings();
         }
 
         private static double Clamp(double size) => Math.Clamp(size, MinSize, MaxSize);
+
+        // --- Content-aspect sizing -------------------------------------------
+
+        /// <summary>The hosted content's width ÷ height (1 = square).</summary>
+        private double Aspect
+        {
+            get
+            {
+                double a = _view?.AspectRatio ?? 1;
+                return a > 0 && !double.IsNaN(a) ? a : 1;
+            }
+        }
+
+        /// <summary>True when the content isn't square, so the window tracks its aspect on resize.</summary>
+        private bool IsAspectLocked => Math.Abs(Aspect - 1) > 0.01;
+
+        /// <summary>
+        /// Size the window's width to the content's aspect (height stays the user-controlled
+        /// dimension), so the frame hugs the widget rather than leaving empty space at the edges.
+        /// A no-op for square widgets (aspect 1 keeps width == height).
+        /// </summary>
+        private void FitToAspect()
+        {
+            double h = CurrentHeight;
+            if (double.IsNaN(h) || h <= 0)
+                return;
+
+            Width = h * Aspect;
+
+            // Pull back on-screen if the new width pushed the window off the work area.
+            if (WorkAreaBounds() is Rect vb)
+            {
+                var (cl, ct) = WidgetLayout.Constrain(Left, Top, CurrentWidth, CurrentHeight, vb);
+                Left = cl;
+                Top = ct;
+            }
+        }
     }
 }

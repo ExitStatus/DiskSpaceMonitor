@@ -19,6 +19,8 @@ namespace DiskSpaceMonitor.Widgets.Bar
 
         public FrameworkElement View => _gauge;
 
+        public double AspectRatio => _gauge.DesignAspect;
+
         public void Update(IReadOnlyList<DriveSpace> drives)
         {
             _drives = drives;
