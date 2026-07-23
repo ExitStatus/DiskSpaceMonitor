@@ -9,6 +9,13 @@ on a 0–100% axis).
 
 ![Disk Space Monitor running on the desktop](Docs/main.png)
 
+The same drives shown in the other two styles — a bar graph (with the used and total
+space per drive) and concentric rings (each chip coloured by that drive's status):
+
+| Bar graph | Concentric circles |
+|:---------:|:------------------:|
+| ![Bar graph style over the desktop](Docs/bargraph.png) | ![Concentric circles style over the desktop](Docs/concentric.png) |
+
 ## Features
 
 - **Three widget styles** – choose the look from a **Widget** dropdown:
