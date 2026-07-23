@@ -26,7 +26,8 @@ on a 0–100% axis).
     hug the bars (bars and the gaps between them shrink together as you narrow
     them). The used and total space per drive can optionally be shown on/above
     each bar — those captions auto-size to one shared size that fits the bar, and
-    rotate vertically when a bar is too narrow for horizontal text.
+    rotate vertically when a bar is too narrow for horizontal text. An **Effects**
+    tab adds an outer glow (radius + colour) behind all of its text.
 - **Pluggable widget styles** – new styles plug in by implementing a single
   interface, with their own settings tabs, in their own `Widgets/<Name>/` folder.
   Each style remembers its own configuration independently.
@@ -80,6 +81,7 @@ DiskSpaceMonitor/              # WPF app
     Circular/                 # circular gauge – one window per drive (view, config, editor)
     Concentric/               # concentric circles – one window, a ring per drive
     Bar/                      # bar graph – one window, a bar per drive
+    Effects/                  # reusable widget effects (text outer glow)
   Layout/                     # WidgetLayout (snapping + collision geometry)
   Settings/                   # WidgetSettings, JsonSettingsStore
   Startup/                    # AutoStartService (HKCU Run entry)
@@ -146,9 +148,10 @@ The settings dialog (⚙ button or right-click → Settings…) is tabbed:
     colour, the healthy/low/critical **chip status** colours, and a **ring colour
     per drive**).
   - **Bar graph** – *Appearance* (bar width, unused-space transparency, **Show
-    used space** / **Show total space** toggles, and the low/critical thresholds)
-    and *Colours* (label text, the unused-space track, and the healthy/low/critical
-    status colours).
+    used space** / **Show total space** toggles, and the low/critical thresholds),
+    *Colours* (label text, the unused-space track, and the healthy/low/critical
+    status colours), and *Effects* (an outer-glow radius and colour applied behind
+    all the widget's text).
 
 Each colour is edited with a swatch, an editable `#RRGGBB` box (copy/paste), and a
 pipette button that opens a hue/saturation/brightness picker with gradient sliders

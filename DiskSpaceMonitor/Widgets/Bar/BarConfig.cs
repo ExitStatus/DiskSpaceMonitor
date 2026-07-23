@@ -1,3 +1,5 @@
+using DiskSpaceMonitor.Widgets.Effects;
+
 namespace DiskSpaceMonitor.Widgets.Bar
 {
     /// <summary>
@@ -31,5 +33,8 @@ namespace DiskSpaceMonitor.Widgets.Bar
         public string WarningColor { get; set; } = "#FFB300";
         public string CriticalColor { get; set; } = "#F44336";
         public string TextColor { get; set; } = "#FFFFFF";
+
+        /// <summary>Reusable text outer-glow effect (radius + colour).</summary>
+        public GlowEffectConfig Glow { get; set; } = new();
     }
 }

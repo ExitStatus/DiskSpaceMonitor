@@ -5,7 +5,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using DiskSpaceMonitor.Widgets.Effects;
 
 namespace DiskSpaceMonitor.Widgets.Bar
 {
@@ -38,6 +40,10 @@ namespace DiskSpaceMonitor.Widgets.Bar
 
         private double _aspect = 1;
 
+        // The outer-glow effect for this render, or null when off. Each text element is built through
+        // GlowEffect.Wrap so the glow sits behind crisp glyphs rather than blurring the font.
+        private Effect? _glow;
+
         /// <summary>Content width ÷ height after the last render; the window fits itself to this.</summary>
         internal double DesignAspect => _aspect;
 
@@ -46,8 +52,10 @@ namespace DiskSpaceMonitor.Widgets.Bar
             InitializeComponent();
         }
 
-        internal void Render(IReadOnlyList<Bar> bars, Color track, double trackOpacity, Color text, double barWidth)
+        internal void Render(IReadOnlyList<Bar> bars, Color track, double trackOpacity, Color text,
+            double barWidth, Effect? glow)
         {
+            _glow = glow;
             Root.Children.Clear();
             Root.ColumnDefinitions.Clear();
             Root.RowDefinitions.Clear();
@@ -174,7 +182,7 @@ namespace DiskSpaceMonitor.Widgets.Bar
             return grid;
         }
 
-        private static FrameworkElement BuildBar(Bar bar, Brush trackBrush, byte trackAlpha, Color text,
+        private FrameworkElement BuildBar(Bar bar, Brush trackBrush, byte trackAlpha, Color text,
             double captionFont, bool rotate)
         {
             double used = Math.Clamp(bar.UsedFraction, 0, 1);
@@ -219,7 +227,7 @@ namespace DiskSpaceMonitor.Widgets.Bar
             return col;
         }
 
-        private static FrameworkElement BuildYAxis(Color text)
+        private FrameworkElement BuildYAxis(Color text)
         {
             var grid = new Grid { Margin = new Thickness(0, 0, 6, 0) };
 
@@ -229,15 +237,16 @@ namespace DiskSpaceMonitor.Widgets.Bar
             return grid;
         }
 
-        private static TextBlock AxisTick(string label, Color text, VerticalAlignment v) => new()
-        {
-            Text = label,
-            FontSize = 10,
-            Opacity = 0.7,
-            Foreground = new SolidColorBrush(text),
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = v,
-        };
+        private FrameworkElement AxisTick(string label, Color text, VerticalAlignment v)
+            => GlowEffect.Wrap(() => new TextBlock
+            {
+                Text = label,
+                FontSize = 10,
+                Opacity = 0.7,
+                Foreground = new SolidColorBrush(text),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = v,
+            }, _glow);
 
         private static FrameworkElement BuildGridlines(Color text)
         {
@@ -256,21 +265,22 @@ namespace DiskSpaceMonitor.Widgets.Bar
             VerticalAlignment = v,
         };
 
-        private static TextBlock BuildCaption(string label, Color text, double fontSize, bool rotate)
-        {
-            var tb = new TextBlock
+        private FrameworkElement BuildCaption(string label, Color text, double fontSize, bool rotate)
+            => GlowEffect.Wrap(() =>
             {
-                Text = label,
-                FontSize = fontSize,
-                Foreground = new SolidColorBrush(text),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Bottom,
-                TextAlignment = TextAlignment.Center,
-            };
-            if (rotate)
-                tb.LayoutTransform = new RotateTransform(-90);   // 90° counter-clockwise
-            return tb;
-        }
+                var tb = new TextBlock
+                {
+                    Text = label,
+                    FontSize = fontSize,
+                    Foreground = new SolidColorBrush(text),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Bottom,
+                    TextAlignment = TextAlignment.Center,
+                };
+                if (rotate)
+                    tb.LayoutTransform = new RotateTransform(-90);   // 90° counter-clockwise
+                return tb;
+            }, _glow);
 
         // Natural width of a caption at a given font size, used to pick a size that fits the bar.
         private static double MeasureWidth(string text, double fontSize)
@@ -280,19 +290,20 @@ namespace DiskSpaceMonitor.Widgets.Bar
             return tb.DesiredSize.Width;
         }
 
-        private static FrameworkElement BuildXLabel(Bar bar, Color text)
-        {
-            var tb = new TextBlock
+        private FrameworkElement BuildXLabel(Bar bar, Color text)
+            => GlowEffect.Wrap(() =>
             {
-                TextAlignment = TextAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Foreground = new SolidColorBrush(text),
-                FontSize = 11,
-            };
-            tb.Inlines.Add(new Run(bar.Letter) { FontWeight = FontWeights.SemiBold });
-            tb.Inlines.Add(new LineBreak());
-            tb.Inlines.Add(new Run($"{Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%") { FontSize = 10 });
-            return tb;
-        }
+                var tb = new TextBlock
+                {
+                    TextAlignment = TextAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Foreground = new SolidColorBrush(text),
+                    FontSize = 11,
+                };
+                tb.Inlines.Add(new Run(bar.Letter) { FontWeight = FontWeights.SemiBold });
+                tb.Inlines.Add(new LineBreak());
+                tb.Inlines.Add(new Run($"{Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%") { FontSize = 10 });
+                return tb;
+            }, _glow);
     }
 }

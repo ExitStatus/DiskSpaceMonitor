@@ -4,13 +4,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using DiskSpaceMonitor.Views;
+using DiskSpaceMonitor.Widgets.Effects;
 
 namespace DiskSpaceMonitor.Widgets.Bar
 {
     /// <summary>
     /// Settings editor for the bar-graph widget: an Appearance tab (unused-space transparency and
-    /// the low/critical thresholds) and a Colours tab (label text, the unused-bar track, and the
-    /// healthy/low/critical status colours).
+    /// the low/critical thresholds), a Colours tab (label text, the unused-bar track, and the
+    /// healthy/low/critical status colours), and an Effects tab (the reusable text outer glow).
     /// </summary>
     public sealed class BarConfigEditor : IWidgetConfigEditor
     {
@@ -28,16 +29,19 @@ namespace DiskSpaceMonitor.Widgets.Bar
         private ColorRow _healthyRow = null!;
         private ColorRow _warningRow = null!;
         private ColorRow _criticalRow = null!;
+        private GlowEffectEditor _glow = null!;
         private bool _ready;
 
         public BarConfigEditor(BarConfig initial, Action onChanged)
         {
             _onChanged = onChanged;
+            _glow = new GlowEffectEditor(initial.Glow, Raise);
 
             _tabs = new[]
             {
                 new WidgetConfigTab("Appearance", BuildAppearance(initial)),
                 new WidgetConfigTab("Colours", BuildColours(initial)),
+                new WidgetConfigTab("Effects", _glow.View),
             };
             _ready = true;
         }
@@ -57,6 +61,7 @@ namespace DiskSpaceMonitor.Widgets.Bar
             HealthyColor = ColorUtil.ToHex(_healthyRow.Color),
             WarningColor = ColorUtil.ToHex(_warningRow.Color),
             CriticalColor = ColorUtil.ToHex(_criticalRow.Color),
+            Glow = _glow.Current(),
         };
 
         private void Raise()

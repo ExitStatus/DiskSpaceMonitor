@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   you drag; **Cancel** reverts. Replaces the inline R/G/B sliders.
 - **Per-style settings** – every widget style keeps its own configuration, so
   switching styles or restarting no longer resets another style's settings.
+- **Text outer glow** – the bar graph gains an **Effects** tab with an **Outer glow**
+  radius (0–10) and an **Outer glow colour**, adding an alpha-blended halo around
+  every label, caption and axis tick. The glow renders as stacked blurred copies
+  strictly *behind* the text, so the glyphs stay sharp. It's a reusable component
+  (`Widgets/Effects/`), ready for future widgets to adopt.
 
 ### Changed
 

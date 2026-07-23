@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using DiskSpaceMonitor.Drives;
 using DiskSpaceMonitor.Views;
+using DiskSpaceMonitor.Widgets.Effects;
 
 namespace DiskSpaceMonitor.Widgets.Bar
 {
@@ -62,7 +63,7 @@ namespace DiskSpaceMonitor.Widgets.Bar
 
             _gauge.Render(bars, ColorUtil.Parse(_config.TrackColor, Color.FromRgb(0x6E, 0x76, 0x86)),
                 _config.TrackOpacity, ColorUtil.Parse(_config.TextColor, Colors.White),
-                _config.BarWidthPercent / 100.0);
+                _config.BarWidthPercent / 100.0, GlowEffect.Build(_config.Glow));
         }
     }
 }

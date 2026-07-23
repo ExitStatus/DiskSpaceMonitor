@@ -32,6 +32,8 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             c.WarningColor.Should().Be("#FFB300");
             c.CriticalColor.Should().Be("#F44336");
             c.TextColor.Should().Be("#FFFFFF");
+            c.Glow.OuterGlowRadius.Should().Be(0);
+            c.Glow.OuterGlowColor.Should().Be("#FFFFFF");
         }
 
         [Test]
@@ -50,6 +52,11 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
                 WarningColor = "#FFFF00",
                 CriticalColor = "#FF0000",
                 TextColor = "#101010",
+                Glow = new DiskSpaceMonitor.Widgets.Effects.GlowEffectConfig
+                {
+                    OuterGlowRadius = 7,
+                    OuterGlowColor = "#00AAFF",
+                },
             };
 
             var node = _widget.WriteConfig(original);
@@ -66,6 +73,8 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             loaded.WarningColor.Should().Be("#FFFF00");
             loaded.CriticalColor.Should().Be("#FF0000");
             loaded.TextColor.Should().Be("#101010");
+            loaded.Glow.OuterGlowRadius.Should().Be(7);
+            loaded.Glow.OuterGlowColor.Should().Be("#00AAFF");
         }
 
         [Test]
