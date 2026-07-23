@@ -99,6 +99,13 @@ namespace DiskSpaceMonitor.Views
                 Top = _config.Top;
             }
 
+            // Apply the widget first so the window is at its true (aspect-fitted) size before we
+            // constrain it on-screen. Constraining the intermediate square size would shove a
+            // non-square widget (e.g. the bar graph) sideways every restart.
+            // (If App already pushed a widget via a live-preview rebuild, keep it.)
+            if (!_viewInitialized)
+                ApplyWidget();
+
             // Pull a widget back on-screen if its saved spot is now off the desktop
             // (e.g. a monitor was disconnected or rearranged).
             if (WorkAreaBounds() is Rect vb)
@@ -108,10 +115,6 @@ namespace DiskSpaceMonitor.Views
                 Top = ct;
             }
 
-            // If App already pushed a widget (e.g. a live-preview rebuild created this window),
-            // don't overwrite it with the saved settings here.
-            if (!_viewInitialized)
-                ApplyWidget();
             _diskTimer.Start();
             // _inputTimer is started on demand by SetInteractive (Ctrl held).
         }

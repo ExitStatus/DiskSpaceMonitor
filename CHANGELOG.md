@@ -51,6 +51,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pre-1.1 settings files are migrated automatically on first load, preserving the
   existing look.
 
+### Fixed
+
+- The bar graph window no longer drifts left on restart. Its saved position was
+  being constrained against the intermediate square size before the window was
+  fitted to the bars, shoving a window near a screen's right edge sideways.
+
 ## [1.0.0] - 2026-07-21
 
 First public release.
