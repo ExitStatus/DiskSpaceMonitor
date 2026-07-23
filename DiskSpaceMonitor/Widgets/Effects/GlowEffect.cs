@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
+using System.Windows.Shapes;
 using DiskSpaceMonitor.Views;
 
 namespace DiskSpaceMonitor.Widgets.Effects
@@ -74,6 +75,38 @@ namespace DiskSpaceMonitor.Widgets.Effects
             }
 
             layered.Children.Add(makeText());   // pristine, vector-sharp text on top
+            return layered;
+        }
+
+        /// <summary>
+        /// Builds an intense glow that sits <em>behind</em> an existing on-screen visual — for text
+        /// that lives in XAML and updates in place, rather than being rebuilt through <see cref="Wrap"/>.
+        /// Returns a stack of blurred, live mirrors of <paramref name="source"/> (via a
+        /// <see cref="VisualBrush"/>, so they track its content automatically); place the result in the
+        /// same cell as, and behind, the source so its crisp glyphs stay untouched on top. The result
+        /// contributes no size of its own, so it never disturbs the source's layout. A null glow
+        /// yields a collapsed placeholder.
+        /// </summary>
+        public static FrameworkElement BehindVisual(Visual source, Effect? glow)
+        {
+            var layered = new Grid { IsHitTestVisible = false };
+            if (glow is null)
+            {
+                layered.Visibility = Visibility.Collapsed;
+                return layered;
+            }
+
+            // Each mirror only paints where the source has content, so the drop shadow's halo follows
+            // the text's silhouette; stacking several accumulates alpha into a dense glow.
+            for (int i = 0; i < GlowLayers; i++)
+            {
+                layered.Children.Add(new Rectangle
+                {
+                    Effect = glow,
+                    Fill = new VisualBrush(source) { Stretch = Stretch.None },
+                });
+            }
+
             return layered;
         }
     }

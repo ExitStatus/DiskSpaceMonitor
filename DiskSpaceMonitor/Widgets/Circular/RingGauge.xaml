@@ -22,8 +22,10 @@
             <Path x:Name="UsedArc" StrokeThickness="16"
                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
 
-            <!-- Centre stats. -->
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <!-- Centre stats. The host Grid lets an optional outer-glow layer be inserted behind
+                 CenterStack (see SetGlow), keeping the real text crisp on top. -->
+            <Grid x:Name="CenterHost" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel x:Name="CenterStack" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel.Effect>
                     <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="0" Opacity="0.8"/>
                 </StackPanel.Effect>
@@ -40,6 +42,7 @@
                            HorizontalAlignment="Center" Margin="0,-3,0,0"
                            Foreground="White" FontSize="19" FontWeight="Bold"/>
             </StackPanel>
+            </Grid>
         </Grid>
     </Viewbox>
 </UserControl>

@@ -1,4 +1,5 @@
 using DiskSpaceMonitor.Widgets;
+using DiskSpaceMonitor.Widgets.Effects;
 
 namespace DiskSpaceMonitor.Widgets.Circular
 {
@@ -28,5 +29,8 @@ namespace DiskSpaceMonitor.Widgets.Circular
         public string WarningColor { get; set; } = "#FFB300";
         public string CriticalColor { get; set; } = "#F44336";
         public string TextColor { get; set; } = "#FFFFFF";
+
+        /// <summary>Reusable text outer-glow effect (radius + colour) behind the centre stats.</summary>
+        public GlowEffectConfig Glow { get; set; } = new();
     }
 }

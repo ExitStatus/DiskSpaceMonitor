@@ -14,7 +14,8 @@ on a 0–100% axis).
 - **Three widget styles** – choose the look from a **Widget** dropdown:
   - **Circular gauge** – one gauge per drive; the ring fills with used space and
     its colour shifts green → amber → red as free space runs low. The centre shows
-    the drive letter and total size, the free space, and the percentage free.
+    the drive letter and total size, the free space, and the percentage free, with
+    an optional outer glow behind the text.
   - **Concentric circles** – a single window drawing every drive as a nested ring
     (innermost = first drive), each swept to that drive's used %, with a small
     label chip ("`C 90%`") coloured by the drive's status. Ring thickness, the
@@ -141,8 +142,9 @@ The settings dialog (⚙ button or right-click → Settings…) is tabbed:
 - **Drives** – which drives to show (at least one is always kept).
 - The selected widget then contributes its own tabs:
   - **Circular gauge** – *Appearance* (background opacity, ring thickness, and the
-    free-space percentages at which the ring turns "low" and "critical") and
-    *Colours* (the colour of each part of the gauge).
+    free-space percentages at which the ring turns "low" and "critical"), *Colours*
+    (the colour of each part of the gauge), and *Effects* (an outer-glow radius and
+    colour behind the centre text).
   - **Concentric circles** – *Appearance* (ring thickness, unused-space
     transparency, and the low/critical thresholds) and *Colours* (the label-text
     colour, the healthy/low/critical **chip status** colours, and a **ring colour

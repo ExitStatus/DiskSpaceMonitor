@@ -27,6 +27,8 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             c.CriticalThresholdPercent.Should().Be(15);
             c.BackgroundColor.Should().Be("#161A20");
             c.TextColor.Should().Be("#FFFFFF");
+            c.Glow.OuterGlowRadius.Should().Be(0);
+            c.Glow.OuterGlowColor.Should().Be("#FFFFFF");
         }
 
         [Test]
@@ -37,6 +39,11 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
                 RingThickness = 22,
                 LowThresholdPercent = 55,
                 TrackColor = "#123456",
+                Glow = new DiskSpaceMonitor.Widgets.Effects.GlowEffectConfig
+                {
+                    OuterGlowRadius = 6,
+                    OuterGlowColor = "#FF8800",
+                },
             };
 
             var node = _factory.WriteConfig(original);
@@ -46,6 +53,8 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             loaded.LowThresholdPercent.Should().Be(55);
             loaded.TrackColor.Should().Be("#123456");
             loaded.BackgroundColor.Should().Be("#161A20"); // untouched default preserved
+            loaded.Glow.OuterGlowRadius.Should().Be(6);
+            loaded.Glow.OuterGlowColor.Should().Be("#FF8800");
         }
 
         [Test]

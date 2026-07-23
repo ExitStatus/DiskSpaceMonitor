@@ -2,8 +2,10 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using DiskSpaceMonitor.Drives;
+using DiskSpaceMonitor.Widgets.Effects;
 
 namespace DiskSpaceMonitor.Widgets.Circular
 {
@@ -29,9 +31,22 @@ namespace DiskSpaceMonitor.Widgets.Circular
         private DiskFillLevel _level = DiskFillLevel.Healthy;
         private double _lastFreeFraction = 1.0;
 
+        // The current outer-glow layer (behind the centre text), if any, so it can be swapped out.
+        private FrameworkElement? _glowLayer;
+
         public RingGauge()
         {
             InitializeComponent();
+        }
+
+        /// <summary>Set (or clear, with null) the outer glow rendered behind the centre text.</summary>
+        public void SetGlow(Effect? glow)
+        {
+            if (_glowLayer != null)
+                CenterHost.Children.Remove(_glowLayer);
+
+            _glowLayer = GlowEffect.BehindVisual(CenterStack, glow);
+            CenterHost.Children.Insert(0, _glowLayer);   // behind the crisp text
         }
 
         /// <summary>Set the opacity of the dark backing disc (0 = invisible, 1 = solid).</summary>

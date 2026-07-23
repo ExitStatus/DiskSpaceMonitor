@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using DiskSpaceMonitor.Drives;
 using DiskSpaceMonitor.Views;
+using DiskSpaceMonitor.Widgets.Effects;
 
 namespace DiskSpaceMonitor.Widgets.Circular
 {
@@ -36,6 +37,7 @@ namespace DiskSpaceMonitor.Widgets.Circular
                 ColorUtil.Parse(c.WarningColor, Color.FromRgb(0xFF, 0xB3, 0x00)),
                 ColorUtil.Parse(c.CriticalColor, Color.FromRgb(0xF4, 0x43, 0x36)),
                 ColorUtil.Parse(c.TextColor, Colors.White));
+            _gauge.SetGlow(GlowEffect.Build(c.Glow));
             // Thresholds last: they recompute the fill level off the latest reading.
             _gauge.SetThresholds(c.LowThresholdPercent, c.CriticalThresholdPercent);
         }
