@@ -22,26 +22,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Labels nudge apart automatically so they never overlap, and the window sizes
   itself tightly to its content. Selecting a single-instance style collapses the
   per-drive windows into one and back again, remembering its own position and size.
-- **Bar graph widget** – a third style: a single window with a vertical bar per
-  drive on a 0–100% (used space) axis, each bar coloured by free-space status. The
-  bar width, the unused-space transparency, the track/status colours, and the
+- **Vertical bar graph widget** – a third style: a single window with a vertical bar per
+  drive on a 0–100% (used space) axis, each bar coloured by free-space status. An
+  **Orientation** dropdown flips the axis between **Bottom Up** (0% at the bottom,
+  bars growing upwards — the default) and **Top Down** (0% at the top, bars hanging
+  downwards); the y-axis, the fill direction and the used-space captions all follow.
+  The bar width, the unused-space transparency, the track/status colours, and the
   thresholds are configurable, and optional **Show used space** / **Show total
   space** captions display the humanized used amount on each bar and the total
   above it. The whole chart (bars and labels) scales with the window, and the
   window resizes to hug the bars — the bars and the gaps between them shrink
   together as the bar width is reduced, rather than leaving space at the edges.
   The used/total captions auto-size to one shared size that fits the bar and
-  rotate 90° when a bar is too narrow for horizontal text.
+  rotate 90° when a bar is too narrow for horizontal text. A **Bar style** on the
+  Effects tab outlines the fill: **Plain**, **Border** (an even outline of a chosen
+  size and colour), or **3D Border** (a bevel of the chosen size, with the
+  **highlight** along the top and left and the **lowlight** down the right and
+  along the bottom, so the bar reads as raised).
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as
   you drag; **Cancel** reverts. Replaces the inline R/G/B sliders.
 - **Per-style settings** – every widget style keeps its own configuration, so
   switching styles or restarting no longer resets another style's settings.
-- **Text outer glow** – the circular gauge and bar graph each gain an **Effects** tab
-  with an **Outer glow** radius (0–10) and an **Outer glow colour**, adding an
-  alpha-blended halo around the widget's text (the gauge's centre stats; the bar
-  graph's labels, captions and axis ticks). The glow renders as stacked blurred
+- **Text outer glow** – the circular gauge and vertical bar graph each gain an
+  **Effects** tab with an **Outer glow** radius (0–10) and an **Outer glow colour**,
+  adding an alpha-blended halo around the widget's text (the gauge's centre stats;
+  the bar graph's labels, captions and axis ticks). The glow renders as stacked blurred
   copies strictly *behind* the text, so the glyphs stay sharp. It's a reusable
   component (`Widgets/Effects/`), ready for future widgets to adopt.
 
@@ -59,7 +66,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- The bar graph window no longer drifts left on restart. Its saved position was
+- Toggling **Show used space** on the vertical bar graph no longer changes the size
+  of the chart. Switching it on reserved a fixed band of headroom past the 100% line,
+  which came straight out of the fixed-height plot and shrank the bars (by ~9.5% with
+  **Show total space** off). The captions are clipped to their own bar column and
+  could never reach that band, so it only cost plot height and has been removed.
+- The vertical bar graph window no longer drifts left on restart. Its saved position was
   being constrained against the intermediate square size before the window was
   fitted to the bars, shoving a window near a screen's right edge sideways.
 

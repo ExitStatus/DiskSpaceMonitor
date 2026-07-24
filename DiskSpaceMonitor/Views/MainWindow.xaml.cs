@@ -101,7 +101,7 @@ namespace DiskSpaceMonitor.Views
 
             // Apply the widget first so the window is at its true (aspect-fitted) size before we
             // constrain it on-screen. Constraining the intermediate square size would shove a
-            // non-square widget (e.g. the bar graph) sideways every restart.
+            // non-square widget (e.g. the vertical bar graph) sideways every restart.
             // (If App already pushed a widget via a live-preview rebuild, keep it.)
             if (!_viewInitialized)
                 ApplyWidget();
@@ -436,7 +436,7 @@ namespace DiskSpaceMonitor.Views
             double width = left ? _anchorX - mouseX : mouseX - _anchorX;
             double height = top ? _anchorY - mouseY : mouseY - _anchorY;
 
-            // Non-square widget (e.g. the bar graph): resize by height and keep the content aspect,
+            // Non-square widget (e.g. the vertical bar graph): resize by height and keep the content aspect,
             // anchoring the opposite corner. (Edge snapping stays square-only.)
             if (IsAspectLocked)
             {

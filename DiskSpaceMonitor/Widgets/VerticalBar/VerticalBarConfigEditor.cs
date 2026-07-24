@@ -6,18 +6,27 @@ using System.Windows.Media;
 using DiskSpaceMonitor.Views;
 using DiskSpaceMonitor.Widgets.Effects;
 
-namespace DiskSpaceMonitor.Widgets.Bar
+namespace DiskSpaceMonitor.Widgets.VerticalBar
 {
     /// <summary>
-    /// Settings editor for the bar-graph widget: an Appearance tab (unused-space transparency and
-    /// the low/critical thresholds), a Colours tab (label text, the unused-bar track, and the
+    /// Settings editor for the vertical bar graph widget: an Appearance tab (unused-space transparency
+    /// and the low/critical thresholds), a Colours tab (label text, the unused-bar track, and the
     /// healthy/low/critical status colours), and an Effects tab (the reusable text outer glow).
     /// </summary>
-    public sealed class BarConfigEditor : IWidgetConfigEditor
+    public sealed class VerticalBarConfigEditor : IWidgetConfigEditor
     {
         private readonly Action _onChanged;
         private readonly IReadOnlyList<WidgetConfigTab> _tabs;
 
+        private ComboBox _orientation = null!;
+        private ComboBox _barStyle = null!;
+        private Slider _borderSize = null!;
+        private ColorRow _borderRow = null!;
+        private ColorRow _highlightRow = null!;
+        private ColorRow _lowlightRow = null!;
+        private FrameworkElement _borderSizePanel = null!;
+        private FrameworkElement _borderColourPanel = null!;
+        private FrameworkElement _bevelColourPanel = null!;
         private Slider _barWidth = null!;
         private Slider _trackOpacity = null!;
         private CheckBox _showUsedSpace = null!;
@@ -32,7 +41,7 @@ namespace DiskSpaceMonitor.Widgets.Bar
         private GlowEffectEditor _glow = null!;
         private bool _ready;
 
-        public BarConfigEditor(BarConfig initial, Action onChanged)
+        public VerticalBarConfigEditor(VerticalBarConfig initial, Action onChanged)
         {
             _onChanged = onChanged;
             _glow = new GlowEffectEditor(initial.Glow, Raise);
@@ -41,15 +50,16 @@ namespace DiskSpaceMonitor.Widgets.Bar
             {
                 new WidgetConfigTab("Appearance", BuildAppearance(initial)),
                 new WidgetConfigTab("Colours", BuildColours(initial)),
-                new WidgetConfigTab("Effects", _glow.View),
+                new WidgetConfigTab("Effects", BuildEffects(initial)),
             };
             _ready = true;
         }
 
         public IReadOnlyList<WidgetConfigTab> Tabs => _tabs;
 
-        public IWidgetConfig CurrentConfig() => new BarConfig
+        public IWidgetConfig CurrentConfig() => new VerticalBarConfig
         {
+            Orientation = Selected<BarOrientation>(_orientation),
             BarWidthPercent = _barWidth.Value,
             TrackOpacity = _trackOpacity.Value,
             ShowUsedSpace = _showUsedSpace.IsChecked == true,
@@ -61,6 +71,11 @@ namespace DiskSpaceMonitor.Widgets.Bar
             HealthyColor = ColorUtil.ToHex(_healthyRow.Color),
             WarningColor = ColorUtil.ToHex(_warningRow.Color),
             CriticalColor = ColorUtil.ToHex(_criticalRow.Color),
+            BarStyle = Selected<BarStyle>(_barStyle),
+            BorderSize = _borderSize.Value,
+            BorderColor = ColorUtil.ToHex(_borderRow.Color),
+            HighlightColor = ColorUtil.ToHex(_highlightRow.Color),
+            LowlightColor = ColorUtil.ToHex(_lowlightRow.Color),
             Glow = _glow.Current(),
         };
 
@@ -70,11 +85,18 @@ namespace DiskSpaceMonitor.Widgets.Bar
                 _onChanged();
         }
 
-        private FrameworkElement BuildAppearance(BarConfig initial)
+        private FrameworkElement BuildAppearance(VerticalBarConfig initial)
         {
             var panel = new StackPanel { Margin = new Thickness(6, 16, 6, 6) };
 
-            panel.Children.Add(new TextBlock { Text = "Bar width", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
+            panel.Children.Add(new TextBlock { Text = "Orientation", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
+            _orientation = AddCombo(panel, new[]
+            {
+                ("Bottom Up", BarOrientation.BottomUp),
+                ("Top Down", BarOrientation.TopDown),
+            }, initial.Orientation);
+
+            panel.Children.Add(new TextBlock { Text = "Bar width", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
             _barWidth = AddSlider(panel, min: 10, max: 100, value: initial.BarWidthPercent,
                 small: 5, large: 10, format: v => $"{v:0}%", topMargin: 0, addCaption: false);
 
@@ -91,7 +113,69 @@ namespace DiskSpaceMonitor.Widgets.Bar
             return panel;
         }
 
-        private FrameworkElement BuildColours(BarConfig initial)
+        // Effects: how each bar's fill is outlined, then the reusable text outer glow. Only the rows
+        // the chosen bar style actually uses are shown, but every row keeps its value, so flipping
+        // between Border and 3D Border doesn't lose the other's colours.
+        private FrameworkElement BuildEffects(VerticalBarConfig initial)
+        {
+            var panel = new StackPanel();
+
+            var style = new StackPanel { Margin = new Thickness(6, 16, 6, 0) };
+            style.Children.Add(new TextBlock { Text = "Bar style", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
+            _barStyle = AddCombo(style, new[]
+            {
+                ("Plain", BarStyle.Plain),
+                ("Border", BarStyle.Border),
+                ("3D Border", BarStyle.ThreeDBorder),
+            }, initial.BarStyle);
+
+            var sizePanel = new StackPanel();
+            sizePanel.Children.Add(new TextBlock
+            {
+                Text = "Border size",
+                FontSize = 12,
+                Opacity = 0.7,
+                Margin = new Thickness(0, 16, 0, 4),
+            });
+            _borderSize = AddSlider(sizePanel, min: 1, max: 10, value: initial.BorderSize,
+                small: 1, large: 2, format: v => $"{v:0}", topMargin: 0, addCaption: false);
+            _borderSize.TickFrequency = 1;
+            _borderSize.IsSnapToTickEnabled = true;
+            style.Children.Add(sizePanel);
+            _borderSizePanel = sizePanel;
+
+            var borderColours = new StackPanel();
+            borderColours.Children.Add(SubHeading("Border colour", 16));
+            _borderRow = AddColorRow(borderColours, "Border", ColorUtil.Parse(initial.BorderColor, Colors.White));
+            style.Children.Add(borderColours);
+            _borderColourPanel = borderColours;
+
+            var bevelColours = new StackPanel();
+            bevelColours.Children.Add(SubHeading("Bevel colours", 16));
+            _highlightRow = AddColorRow(bevelColours, "Highlight", ColorUtil.Parse(initial.HighlightColor, Colors.White));
+            _lowlightRow = AddColorRow(bevelColours, "Lowlight", ColorUtil.Parse(initial.LowlightColor, Colors.Black));
+            style.Children.Add(bevelColours);
+            _bevelColourPanel = bevelColours;
+
+            _barStyle.SelectionChanged += (_, _) => UpdateBarStyleRows();
+            UpdateBarStyleRows();
+
+            panel.Children.Add(style);
+            panel.Children.Add(_glow.View);
+
+            return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel };
+        }
+
+        // Show only the rows the selected bar style uses.
+        private void UpdateBarStyleRows()
+        {
+            var style = Selected<BarStyle>(_barStyle);
+            _borderSizePanel.Visibility = style == BarStyle.Plain ? Visibility.Collapsed : Visibility.Visible;
+            _borderColourPanel.Visibility = style == BarStyle.Border ? Visibility.Visible : Visibility.Collapsed;
+            _bevelColourPanel.Visibility = style == BarStyle.ThreeDBorder ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private FrameworkElement BuildColours(VerticalBarConfig initial)
         {
             var panel = new StackPanel { Margin = new Thickness(6, 12, 6, 6) };
 
@@ -108,6 +192,28 @@ namespace DiskSpaceMonitor.Widgets.Bar
 
             return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel };
         }
+
+        // A labelled-value dropdown, selecting the item matching <paramref name="initial"/> (falling
+        // back to the first) and previewing on every change.
+        private ComboBox AddCombo<T>(StackPanel panel, (string Label, T Value)[] options, T initial)
+            where T : struct, Enum
+        {
+            var combo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+            foreach (var (label, value) in options)
+            {
+                var item = new ComboBoxItem { Content = label, Tag = value };
+                combo.Items.Add(item);
+                if (value.Equals(initial))
+                    combo.SelectedItem = item;
+            }
+
+            combo.SelectedItem ??= combo.Items[0];
+            combo.SelectionChanged += (_, _) => Raise();
+            panel.Children.Add(combo);
+            return combo;
+        }
+
+        private static T Selected<T>(ComboBox combo) => (T)((ComboBoxItem)combo.SelectedItem).Tag;
 
         private Slider AddPercentSlider(StackPanel panel, string caption, double initial)
         {

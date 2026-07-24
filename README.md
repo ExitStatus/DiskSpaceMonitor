@@ -4,17 +4,18 @@ A borderless desktop widget that sits **behind** all your other windows (like a
 wallpaper gadget) and shows remaining space on your drives. Pick a **style** from
 the settings dialog: the **Circular gauge** (one gauge per drive, each its own
 window you can place and size independently), **Concentric circles** (a single
-window drawing every drive as a nested ring), or a **Bar graph** (a bar per drive
-on a 0–100% axis).
+window drawing every drive as a nested ring), or a **Vertical bar graph** (a bar
+per drive on a 0–100% axis).
 
 ![Disk Space Monitor running on the desktop](Docs/main.png)
 
-The same drives shown in the other two styles — a bar graph (with the used and total
-space per drive) and concentric rings (each chip coloured by that drive's status):
+The same drives shown in the other two styles — a vertical bar graph (with the used
+and total space per drive) and concentric rings (each chip coloured by that drive's
+status):
 
-| Bar graph | Concentric circles |
-|:---------:|:------------------:|
-| ![Bar graph style over the desktop](Docs/bargraph.png) | ![Concentric circles style over the desktop](Docs/concentric.png) |
+| Vertical bar graph | Concentric circles |
+|:------------------:|:------------------:|
+| ![Vertical bar graph style over the desktop](Docs/bargraph.png) | ![Concentric circles style over the desktop](Docs/concentric.png) |
 
 ## Features
 
@@ -28,20 +29,24 @@ space per drive) and concentric rings (each chip coloured by that drive's status
     label chip ("`C 90%`") coloured by the drive's status. Ring thickness, the
     per-drive ring colours, the status colours, and the unused-space transparency
     are all configurable. Labels nudge apart automatically so they never overlap.
-  - **Bar graph** – a single window with a vertical bar per drive on a 0–100%
-    (used space) axis, each bar coloured by status. Bar width, the unused-space
-    transparency, colours and thresholds are configurable; the window resizes to
-    hug the bars (bars and the gaps between them shrink together as you narrow
-    them). The used and total space per drive can optionally be shown on/above
-    each bar — those captions auto-size to one shared size that fits the bar, and
-    rotate vertically when a bar is too narrow for horizontal text. An **Effects**
-    tab adds an outer glow (radius + colour) behind all of its text.
+  - **Vertical bar graph** – a single window with a vertical bar per drive on a
+    0–100% (used space) axis, each bar coloured by status. An **Orientation** of
+    *Bottom Up* (0% at the bottom, bars growing up) or *Top Down* (0% at the top,
+    bars hanging down), the bar width, the unused-space transparency, colours and
+    thresholds are all configurable; the window resizes to hug the bars (bars and
+    the gaps between them shrink together as you narrow them). The used and total
+    space per drive can optionally be shown on/above each bar — those captions
+    auto-size to one shared size that fits the bar, and rotate vertically when a
+    bar is too narrow for horizontal text. An **Effects**
+    tab picks a **Bar style** — *Plain*, *Border* (size + colour), or *3D Border*
+    (size + highlight and lowlight colours, lit from the top left) — and adds an
+    outer glow (radius + colour) behind all of its text.
 - **Pluggable widget styles** – new styles plug in by implementing a single
   interface, with their own settings tabs, in their own `Widgets/<Name>/` folder.
   Each style remembers its own configuration independently.
 - **Multiple drives** – managed from the settings dialog (at least one is always
-  shown): the Circular style shows one gauge per drive; Concentric and Bar graph
-  show them all in one window.
+  shown): the Circular style shows one gauge per drive; Concentric and Vertical bar
+  graph show them all in one window.
 - **Colour picker** – every colour is edited from a row with a live swatch and an
   editable `#RRGGBB` box (copy/paste), plus a pipette button that opens a
   hue/saturation/brightness chooser with gradient sliders and a live preview.
@@ -88,7 +93,7 @@ DiskSpaceMonitor/              # WPF app
   Widgets/                    # widget abstraction (IWidget, WidgetRegistry, RingArc, …)
     Circular/                 # circular gauge – one window per drive (view, config, editor)
     Concentric/               # concentric circles – one window, a ring per drive
-    Bar/                      # bar graph – one window, a bar per drive
+    VerticalBar/              # vertical bar graph – one window, a bar per drive
     Effects/                  # reusable widget effects (text outer glow)
   Layout/                     # WidgetLayout (snapping + collision geometry)
   Settings/                   # WidgetSettings, JsonSettingsStore
@@ -156,11 +161,12 @@ The settings dialog (⚙ button or right-click → Settings…) is tabbed:
     transparency, and the low/critical thresholds) and *Colours* (the label-text
     colour, the healthy/low/critical **chip status** colours, and a **ring colour
     per drive**).
-  - **Bar graph** – *Appearance* (bar width, unused-space transparency, **Show
-    used space** / **Show total space** toggles, and the low/critical thresholds),
-    *Colours* (label text, the unused-space track, and the healthy/low/critical
-    status colours), and *Effects* (an outer-glow radius and colour applied behind
-    all the widget's text).
+  - **Vertical bar graph** – *Appearance* (**Orientation**, bar width, unused-space
+    transparency, **Show used space** / **Show total space** toggles, and the
+    low/critical thresholds), *Colours* (label text, the unused-space track, and
+    the healthy/low/critical status colours), and *Effects* (a **Bar style** of
+    Plain, Border or 3D Border with its size and colours, plus an outer-glow
+    radius and colour applied behind all the widget's text).
 
 Each colour is edited with a swatch, an editable `#RRGGBB` box (copy/paste), and a
 pipette button that opens a hue/saturation/brightness picker with gradient sliders

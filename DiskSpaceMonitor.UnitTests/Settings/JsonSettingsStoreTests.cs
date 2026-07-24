@@ -76,11 +76,11 @@ namespace DiskSpaceMonitor.UnitTests.Settings
             var store = new JsonSettingsStore(_path);
             var original = new WidgetSettings
             {
-                Style = "Bar",
+                Style = "VerticalBar",
                 StyleConfigs =
                 {
                     ["Circular"] = new JsonObject { ["RingThickness"] = 18 },
-                    ["Bar"] = new JsonObject { ["BarWidthPercent"] = 55, ["ShowTotalSpace"] = true },
+                    ["VerticalBar"] = new JsonObject { ["BarWidthPercent"] = 55, ["ShowTotalSpace"] = true },
                 },
             };
 
@@ -89,8 +89,8 @@ namespace DiskSpaceMonitor.UnitTests.Settings
 
             // The inactive style keeps its config too, so switching back never loses it.
             loaded.GetStyleConfig("Circular")!["RingThickness"]!.GetValue<double>().Should().Be(18);
-            loaded.GetStyleConfig("Bar")!["BarWidthPercent"]!.GetValue<double>().Should().Be(55);
-            loaded.GetStyleConfig("Bar")!["ShowTotalSpace"]!.GetValue<bool>().Should().BeTrue();
+            loaded.GetStyleConfig("VerticalBar")!["BarWidthPercent"]!.GetValue<double>().Should().Be(55);
+            loaded.GetStyleConfig("VerticalBar")!["ShowTotalSpace"]!.GetValue<bool>().Should().BeTrue();
         }
 
         [Test]

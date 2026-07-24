@@ -10,9 +10,9 @@ using DiskSpaceMonitor.Interop;
 using DiskSpaceMonitor.Settings;
 using DiskSpaceMonitor.Startup;
 using DiskSpaceMonitor.Widgets;
-using DiskSpaceMonitor.Widgets.Bar;
 using DiskSpaceMonitor.Widgets.Circular;
 using DiskSpaceMonitor.Widgets.Concentric;
+using DiskSpaceMonitor.Widgets.VerticalBar;
 using DiskSpaceMonitor.Views;
 
 namespace DiskSpaceMonitor
@@ -24,7 +24,7 @@ namespace DiskSpaceMonitor
     public partial class App : Application
     {
         private readonly List<MainWindow> _windows = new();
-        private readonly WidgetRegistry _registry = new(new CircularWidget(), new ConcentricWidget(), new BarWidget());
+        private readonly WidgetRegistry _registry = new(new CircularWidget(), new ConcentricWidget(), new VerticalBarWidget());
 
         private ISettingsStore _store = null!;
         private IDriveReader _driveReader = null!;

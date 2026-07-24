@@ -6,16 +6,16 @@ using DiskSpaceMonitor.Drives;
 using DiskSpaceMonitor.Views;
 using DiskSpaceMonitor.Widgets.Effects;
 
-namespace DiskSpaceMonitor.Widgets.Bar
+namespace DiskSpaceMonitor.Widgets.VerticalBar
 {
     /// <summary>
-    /// The bar-graph view: renders every drive as a vertical bar filled to its used %, coloured by
-    /// free-space status. Caches the last readings and config so either change re-renders.
+    /// The vertical bar graph view: renders every drive as a vertical bar filled to its used %,
+    /// coloured by free-space status. Caches the last readings and config so either change re-renders.
     /// </summary>
-    public sealed class BarView : IWidgetView
+    public sealed class VerticalBarView : IWidgetView
     {
-        private readonly BarGauge _gauge = new();
-        private BarConfig _config = new();
+        private readonly VerticalBarGauge _gauge = new();
+        private VerticalBarConfig _config = new();
         private IReadOnlyList<DriveSpace> _drives = Array.Empty<DriveSpace>();
 
         public FrameworkElement View => _gauge;
@@ -30,7 +30,7 @@ namespace DiskSpaceMonitor.Widgets.Bar
 
         public void Apply(IWidgetConfig config)
         {
-            _config = (BarConfig)config;
+            _config = (VerticalBarConfig)config;
             Render();
         }
 
@@ -61,9 +61,16 @@ namespace DiskSpaceMonitor.Widgets.Bar
                 bars.Add(new Bar(letter, used, fill, usedLabel, totalLabel));
             }
 
+            var skin = new BarSkin(
+                _config.BarStyle,
+                _config.BorderSize,
+                ColorUtil.Parse(_config.BorderColor, Colors.White),
+                ColorUtil.Parse(_config.HighlightColor, Colors.White),
+                ColorUtil.Parse(_config.LowlightColor, Colors.Black));
+
             _gauge.Render(bars, ColorUtil.Parse(_config.TrackColor, Color.FromRgb(0x6E, 0x76, 0x86)),
                 _config.TrackOpacity, ColorUtil.Parse(_config.TextColor, Colors.White),
-                _config.BarWidthPercent / 100.0, GlowEffect.Build(_config.Glow));
+                _config.BarWidthPercent / 100.0, _config.Orientation, skin, GlowEffect.Build(_config.Glow));
         }
     }
 }
