@@ -4,8 +4,8 @@ A borderless desktop widget that sits **behind** all your other windows (like a
 wallpaper gadget) and shows remaining space on your drives. Pick a **style** from
 the settings dialog: the **Circular gauge** (one gauge per drive, each its own
 window you can place and size independently), **Concentric circles** (a single
-window drawing every drive as a nested ring), or a **Vertical bar graph** (a bar
-per drive on a 0–100% axis).
+window drawing every drive as a nested ring), or a **Vertical bar graph** or
+**Horizontal bar graph** (a bar per drive on a 0–100% axis).
 
 ![Disk Space Monitor running on the desktop](Docs/main.png)
 
@@ -19,7 +19,7 @@ status):
 
 ## Features
 
-- **Three widget styles** – choose the look from a **Widget** dropdown:
+- **Four widget styles** – choose the look from a **Widget** dropdown:
   - **Circular gauge** – one gauge per drive; the ring fills with used space and
     its colour shifts green → amber → red as free space runs low. The centre shows
     the drive letter and total size, the free space, and the percentage free, with
@@ -41,12 +41,21 @@ status):
     tab picks a **Bar style** — *Plain*, *Border* (size + colour), or *3D Border*
     (size + highlight and lowlight colours, lit from the top left) — and adds an
     outer glow (radius + colour) behind all of its text.
+  - **Horizontal bar graph** – the same graph turned on its side: a bar per drive
+    running across a 0–100% axis, stacked down the window, with the drive label at
+    the 0% end and the total at the 100% end. Its **Orientation** is *Left to Right*
+    (0% at the left) or *Right to Left* (0% at the right), and it offers the same
+    bar thickness, transparency, colours, thresholds, captions, bar styles and glow
+    as the vertical graph. Captions scale to the bar's slot rather than rotating,
+    since a horizontal bar has the whole axis to write along. The gap between bars
+    is fixed, so thinning them closes the graph up and the window shortens to fit —
+    this is the one widget you size by its width, with its height following the bars.
 - **Pluggable widget styles** – new styles plug in by implementing a single
   interface, with their own settings tabs, in their own `Widgets/<Name>/` folder.
   Each style remembers its own configuration independently.
 - **Multiple drives** – managed from the settings dialog (at least one is always
-  shown): the Circular style shows one gauge per drive; Concentric and Vertical bar
-  graph show them all in one window.
+  shown): the Circular style shows one gauge per drive; Concentric and both bar
+  graphs show them all in one window.
 - **Colour picker** – every colour is edited from a row with a live swatch and an
   editable `#RRGGBB` box (copy/paste), plus a pipette button that opens a
   hue/saturation/brightness chooser with gradient sliders and a live preview.
@@ -62,7 +71,8 @@ status):
 - **Customisable appearance** – opacities, ring thickness, and the colour of every
   part, all with a live preview.
 - **Configurable thresholds** – choose the free-space percentages at which a drive
-  turns "low" and "critical" (colouring the Circular ring or the Concentric chip).
+  turns "low" and "critical" (colouring the Circular ring, the Concentric chip, or
+  a bar in either bar graph).
 - **Auto-start** – optionally launch at login (a per-user `Run` registry entry).
 - **Efficient** – idle between refreshes; a single low-level keyboard hook wakes
   the UI only while Ctrl is held (no continuous polling). The working set is
@@ -93,7 +103,9 @@ DiskSpaceMonitor/              # WPF app
   Widgets/                    # widget abstraction (IWidget, WidgetRegistry, RingArc, …)
     Circular/                 # circular gauge – one window per drive (view, config, editor)
     Concentric/               # concentric circles – one window, a ring per drive
+    BarGraph/                 # shared by both bar graphs (config, editor, widget base, fill)
     VerticalBar/              # vertical bar graph – one window, a bar per drive
+    HorizontalBar/            # horizontal bar graph – the same, turned on its side
     Effects/                  # reusable widget effects (text outer glow)
   Layout/                     # WidgetLayout (snapping + collision geometry)
   Settings/                   # WidgetSettings, JsonSettingsStore
@@ -167,6 +179,10 @@ The settings dialog (⚙ button or right-click → Settings…) is tabbed:
     the healthy/low/critical status colours), and *Effects* (a **Bar style** of
     Plain, Border or 3D Border with its size and colours, plus an outer-glow
     radius and colour applied behind all the widget's text).
+  - **Horizontal bar graph** – the same three tabs and the same settings, with
+    *Left to Right* / *Right to Left* orientations and the size slider labelled
+    **Bar thickness**. It keeps its own copy of every setting, so the two graphs
+    can be styled differently.
 
 Each colour is edited with a swatch, an editable `#RRGGBB` box (copy/paste), and a
 pipette button that opens a hue/saturation/brightness picker with gradient sliders

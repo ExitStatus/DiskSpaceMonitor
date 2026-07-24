@@ -436,13 +436,25 @@ namespace DiskSpaceMonitor.Views
             double width = left ? _anchorX - mouseX : mouseX - _anchorX;
             double height = top ? _anchorY - mouseY : mouseY - _anchorY;
 
-            // Non-square widget (e.g. the vertical bar graph): resize by height and keep the content aspect,
-            // anchoring the opposite corner. (Edge snapping stays square-only.)
+            // Non-square widget (e.g. either bar graph): resize by the widget's own user dimension and
+            // keep the content aspect, anchoring the opposite corner. Dragging either way still grows
+            // the window — the drag is measured on whichever axis the widget lets the user set.
+            // (Edge snapping stays square-only.)
             if (IsAspectLocked)
             {
                 double a = Aspect;
-                double h = Math.Clamp(Math.Max(height, width / a), MinSize, MaxSize);
-                double w = h * a;
+                double w, h;
+                if (HeightFollowsContent)
+                {
+                    w = Math.Clamp(Math.Max(width, height * a), MinSize, MaxSize);
+                    h = w / a;
+                }
+                else
+                {
+                    h = Math.Clamp(Math.Max(height, width / a), MinSize, MaxSize);
+                    w = h * a;
+                }
+
                 Left = left ? _anchorX - w : _anchorX;
                 Top = top ? _anchorY - h : _anchorY;
                 Width = w;
@@ -557,7 +569,7 @@ namespace DiskSpaceMonitor.Views
         {
             _config.Left = Left;
             _config.Top = Top;
-            _config.Size = CurrentHeight;   // height is the user-controlled dimension; width follows aspect
+            _config.Size = UserDimension;   // the dimension the user set; the other follows the aspect
             App.Instance.SaveSettings();
         }
 
@@ -578,6 +590,13 @@ namespace DiskSpaceMonitor.Views
         /// <summary>True when the content isn't square, so the window tracks its aspect on resize.</summary>
         private bool IsAspectLocked => Math.Abs(Aspect - 1) > 0.01;
 
+        /// <summary>True when the window keeps its width and derives its height (see
+        /// <see cref="IWidgetView.HeightFollowsContent"/>); false to keep the height and derive width.</summary>
+        private bool HeightFollowsContent => _view?.HeightFollowsContent ?? false;
+
+        /// <summary>The dimension the user sets and drags; the other one follows the content aspect.</summary>
+        private double UserDimension => HeightFollowsContent ? CurrentWidth : CurrentHeight;
+
         /// <summary>
         /// Size the window's width to the content's aspect (height stays the user-controlled
         /// dimension), so the frame hugs the widget rather than leaving empty space at the edges.
@@ -585,11 +604,14 @@ namespace DiskSpaceMonitor.Views
         /// </summary>
         private void FitToAspect()
         {
-            double h = CurrentHeight;
-            if (double.IsNaN(h) || h <= 0)
+            double size = UserDimension;
+            if (double.IsNaN(size) || size <= 0)
                 return;
 
-            Width = h * Aspect;
+            if (HeightFollowsContent)
+                Height = size / Aspect;
+            else
+                Width = size * Aspect;
 
             // Pull back on-screen if the new width pushed the window off the work area.
             if (WorkAreaBounds() is Rect vb)

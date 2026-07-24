@@ -6,16 +6,21 @@ using System.Windows.Media;
 using DiskSpaceMonitor.Views;
 using DiskSpaceMonitor.Widgets.Effects;
 
-namespace DiskSpaceMonitor.Widgets.VerticalBar
+namespace DiskSpaceMonitor.Widgets.BarGraph
 {
     /// <summary>
-    /// Settings editor for the vertical bar graph widget: an Appearance tab (unused-space transparency
-    /// and the low/critical thresholds), a Colours tab (label text, the unused-bar track, and the
-    /// healthy/low/critical status colours), and an Effects tab (the reusable text outer glow).
+    /// Settings editor shared by both bar graph widgets: an Appearance tab (orientation, bar size,
+    /// unused-space transparency, the caption toggles and the low/critical thresholds), a Colours tab
+    /// (label text, the unused-bar track, and the healthy/low/critical status colours), and an
+    /// Effects tab (the bar outline style and the reusable text outer glow). The hosting widget
+    /// supplies the orientation choices and what to call the bar-size slider, which is all that
+    /// differs between the vertical and horizontal graphs.
     /// </summary>
-    public sealed class VerticalBarConfigEditor : IWidgetConfigEditor
+    public sealed class BarGraphConfigEditor : IWidgetConfigEditor
     {
         private readonly Action _onChanged;
+        private readonly (string Label, BarOrientation Value)[] _orientations;
+        private readonly string _barSizeLabel;
         private readonly IReadOnlyList<WidgetConfigTab> _tabs;
 
         private ComboBox _orientation = null!;
@@ -41,9 +46,14 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
         private GlowEffectEditor _glow = null!;
         private bool _ready;
 
-        public VerticalBarConfigEditor(VerticalBarConfig initial, Action onChanged)
+        /// <param name="orientations">The orientation choices to offer, in dropdown order.</param>
+        /// <param name="barSizeLabel">What to call the bar-size slider ("Bar width"/"Bar thickness").</param>
+        public BarGraphConfigEditor(BarGraphConfig initial, Action onChanged,
+            (string Label, BarOrientation Value)[] orientations, string barSizeLabel)
         {
             _onChanged = onChanged;
+            _orientations = orientations;
+            _barSizeLabel = barSizeLabel;
             _glow = new GlowEffectEditor(initial.Glow, Raise);
 
             _tabs = new[]
@@ -57,7 +67,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
 
         public IReadOnlyList<WidgetConfigTab> Tabs => _tabs;
 
-        public IWidgetConfig CurrentConfig() => new VerticalBarConfig
+        public IWidgetConfig CurrentConfig() => new BarGraphConfig
         {
             Orientation = Selected<BarOrientation>(_orientation),
             BarWidthPercent = _barWidth.Value,
@@ -85,18 +95,14 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                 _onChanged();
         }
 
-        private FrameworkElement BuildAppearance(VerticalBarConfig initial)
+        private FrameworkElement BuildAppearance(BarGraphConfig initial)
         {
             var panel = new StackPanel { Margin = new Thickness(6, 16, 6, 6) };
 
             panel.Children.Add(new TextBlock { Text = "Orientation", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
-            _orientation = AddCombo(panel, new[]
-            {
-                ("Bottom Up", BarOrientation.BottomUp),
-                ("Top Down", BarOrientation.TopDown),
-            }, initial.Orientation);
+            _orientation = AddCombo(panel, _orientations, initial.Orientation);
 
-            panel.Children.Add(new TextBlock { Text = "Bar width", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
+            panel.Children.Add(new TextBlock { Text = _barSizeLabel, FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
             _barWidth = AddSlider(panel, min: 10, max: 100, value: initial.BarWidthPercent,
                 small: 5, large: 10, format: v => $"{v:0}%", topMargin: 0, addCaption: false);
 
@@ -116,7 +122,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
         // Effects: how each bar's fill is outlined, then the reusable text outer glow. Only the rows
         // the chosen bar style actually uses are shown, but every row keeps its value, so flipping
         // between Border and 3D Border doesn't lose the other's colours.
-        private FrameworkElement BuildEffects(VerticalBarConfig initial)
+        private FrameworkElement BuildEffects(BarGraphConfig initial)
         {
             var panel = new StackPanel();
 
@@ -175,7 +181,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             _bevelColourPanel.Visibility = style == BarStyle.ThreeDBorder ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private FrameworkElement BuildColours(VerticalBarConfig initial)
+        private FrameworkElement BuildColours(BarGraphConfig initial)
         {
             var panel = new StackPanel { Margin = new Thickness(6, 12, 6, 6) };
 

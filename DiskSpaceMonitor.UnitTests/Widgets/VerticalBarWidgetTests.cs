@@ -1,3 +1,4 @@
+using DiskSpaceMonitor.Widgets.BarGraph;
 using DiskSpaceMonitor.Widgets.VerticalBar;
 using FluentAssertions;
 
@@ -19,7 +20,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void DefaultConfig_HasExpectedDefaults()
         {
-            var c = (VerticalBarConfig)_widget.DefaultConfig();
+            var c = (BarGraphConfig)_widget.DefaultConfig();
 
             c.Orientation.Should().Be(BarOrientation.BottomUp);
             c.BarStyle.Should().Be(BarStyle.Plain);
@@ -45,7 +46,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void WriteThenRead_RoundTripsValues()
         {
-            var original = new VerticalBarConfig
+            var original = new BarGraphConfig
             {
                 Orientation = BarOrientation.TopDown,
                 BarStyle = BarStyle.ThreeDBorder,
@@ -72,7 +73,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             };
 
             var node = _widget.WriteConfig(original);
-            var loaded = (VerticalBarConfig)_widget.ReadConfig(node);
+            var loaded = (BarGraphConfig)_widget.ReadConfig(node);
 
             loaded.Orientation.Should().Be(BarOrientation.TopDown);
             loaded.BarStyle.Should().Be(BarStyle.ThreeDBorder);
@@ -98,7 +99,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void ReadConfig_Null_ReturnsDefaults()
         {
-            var c = (VerticalBarConfig)_widget.ReadConfig(null);
+            var c = (BarGraphConfig)_widget.ReadConfig(null);
 
             c.TrackOpacity.Should().Be(0.2);
             c.HealthyColor.Should().Be("#4CAF50");
@@ -107,7 +108,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void WriteConfig_PersistsOrientationByName()
         {
-            var node = _widget.WriteConfig(new VerticalBarConfig { Orientation = BarOrientation.TopDown });
+            var node = _widget.WriteConfig(new BarGraphConfig { Orientation = BarOrientation.TopDown });
 
             node["Orientation"]!.GetValue<string>().Should().Be("TopDown");
         }
@@ -117,7 +118,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         {
             var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarWidthPercent": 50 }""");
 
-            var c = (VerticalBarConfig)_widget.ReadConfig(node);
+            var c = (BarGraphConfig)_widget.ReadConfig(node);
 
             c.Orientation.Should().Be(BarOrientation.BottomUp);
             c.BarWidthPercent.Should().Be(50);
@@ -126,7 +127,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void WriteConfig_PersistsBarStyleByName()
         {
-            var node = _widget.WriteConfig(new VerticalBarConfig { BarStyle = BarStyle.ThreeDBorder });
+            var node = _widget.WriteConfig(new BarGraphConfig { BarStyle = BarStyle.ThreeDBorder });
 
             node["BarStyle"]!.GetValue<string>().Should().Be("ThreeDBorder");
         }
@@ -136,7 +137,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         {
             var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarWidthPercent": 50, "TrackOpacity": 0.5 }""");
 
-            var c = (VerticalBarConfig)_widget.ReadConfig(node);
+            var c = (BarGraphConfig)_widget.ReadConfig(node);
 
             c.BarStyle.Should().Be(BarStyle.Plain);
             c.BorderSize.Should().Be(2);

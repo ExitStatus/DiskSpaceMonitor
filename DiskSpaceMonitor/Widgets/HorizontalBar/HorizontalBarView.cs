@@ -7,21 +7,25 @@ using DiskSpaceMonitor.Views;
 using DiskSpaceMonitor.Widgets.BarGraph;
 using DiskSpaceMonitor.Widgets.Effects;
 
-namespace DiskSpaceMonitor.Widgets.VerticalBar
+namespace DiskSpaceMonitor.Widgets.HorizontalBar
 {
     /// <summary>
-    /// The vertical bar graph view: renders every drive as a vertical bar filled to its used %,
+    /// The horizontal bar graph view: renders every drive as a horizontal bar filled to its used %,
     /// coloured by free-space status. Caches the last readings and config so either change re-renders.
     /// </summary>
-    public sealed class VerticalBarView : IWidgetView
+    public sealed class HorizontalBarView : IWidgetView
     {
-        private readonly VerticalBarGauge _gauge = new();
+        private readonly HorizontalBarGauge _gauge = new();
         private BarGraphConfig _config = new();
         private IReadOnlyList<DriveSpace> _drives = Array.Empty<DriveSpace>();
 
         public FrameworkElement View => _gauge;
 
         public double AspectRatio => _gauge.DesignAspect;
+
+        /// <summary>This graph grows downwards as bars are added or thickened, so the window keeps
+        /// the width the user set and lets its height follow the bars.</summary>
+        public bool HeightFollowsContent => true;
 
         public void Update(IReadOnlyList<DriveSpace> drives)
         {

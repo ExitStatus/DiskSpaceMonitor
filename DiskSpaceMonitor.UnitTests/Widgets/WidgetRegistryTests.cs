@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
 using DiskSpaceMonitor.Widgets;
+using DiskSpaceMonitor.Widgets.BarGraph;
+using DiskSpaceMonitor.Widgets.HorizontalBar;
 using DiskSpaceMonitor.Widgets.VerticalBar;
 using DiskSpaceMonitor.Widgets.Circular;
 using DiskSpaceMonitor.Widgets.Concentric;
@@ -68,12 +70,14 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void RealWidgets_ExposeCorrectInstancing()
         {
-            var registry = new WidgetRegistry(new CircularWidget(), new ConcentricWidget(), new VerticalBarWidget());
+            var registry = new WidgetRegistry(new CircularWidget(), new ConcentricWidget(),
+                new VerticalBarWidget(), new HorizontalBarWidget());
 
-            registry.All.Select(f => f.Id).Should().Equal("Circular", "Concentric", "VerticalBar");
+            registry.All.Select(f => f.Id).Should().Equal("Circular", "Concentric", "VerticalBar", "HorizontalBar");
             registry.Get("Circular").ShowsAllDrives.Should().BeFalse();
             registry.Get("Concentric").ShowsAllDrives.Should().BeTrue();
             registry.Get("VerticalBar").ShowsAllDrives.Should().BeTrue();
+            registry.Get("HorizontalBar").ShowsAllDrives.Should().BeTrue();
         }
     }
 }

@@ -7,24 +7,11 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using DiskSpaceMonitor.Widgets.BarGraph;
 using DiskSpaceMonitor.Widgets.Effects;
 
 namespace DiskSpaceMonitor.Widgets.VerticalBar
 {
-    /// <summary>
-    /// One bar to draw: its axis label, used fraction [0,1], fill (status) colour, and an optional
-    /// used-space caption shown on top of the bar (empty to hide it).
-    /// </summary>
-    internal readonly record struct Bar(string Letter, double UsedFraction, Color Fill,
-        string UsedLabel, string TotalLabel);
-
-    /// <summary>
-    /// How to outline a bar's fill: the chosen style, the outline width, and the colours each style
-    /// draws with (the unused ones are ignored). Grouped so the render call stays readable.
-    /// </summary>
-    internal readonly record struct BarSkin(BarStyle Style, double Size, Color Border,
-        Color Highlight, Color Lowlight);
-
     /// <summary>
     /// Draws a vertical bar per drive: the y-axis runs 0–100% (used space) and each bar fills from
     /// the 0% end to its used %. The unused part beyond the fill is a faint track. Bottom-up puts
@@ -33,8 +20,6 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
     /// </summary>
     public partial class VerticalBarGauge : UserControl
     {
-        private const double CornerRadius = 3;
-
         // Fixed design height; the width sizes to content so the graph hugs the bars. The Viewbox
         // scales it (and every label) to the actual window size.
         private const double DesignHeight = 200;
@@ -127,7 +112,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             bool rotateCaptions = false;
             if (captionTexts.Count > 0)
             {
-                double maxWidth = captionTexts.Max(c => MeasureWidth(c, CaptionBaseFont));
+                double maxWidth = captionTexts.Max(c => BarGraphParts.Measure(c, CaptionBaseFont).Width);
                 double fitFont = maxWidth > 0 ? CaptionBaseFont * barThickness / maxWidth : CaptionBaseFont;
                 fitFont = Math.Min(CaptionBaseFont, fitFont);
                 rotateCaptions = fitFont < CaptionMinFont;
@@ -217,14 +202,14 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                 var track = new Rectangle
                 {
                     Fill = trackBrush,
-                    RadiusX = CornerRadius,
-                    RadiusY = CornerRadius,
+                    RadiusX = BarGraphParts.CornerRadius,
+                    RadiusY = BarGraphParts.CornerRadius,
                 };
                 Grid.SetRowSpan(track, 2);
                 col.Children.Add(track);
             }
 
-            var fill = BuildFill(bar.Fill);
+            var fill = BarGraphParts.BuildFill(bar.Fill, _skin);
             Grid.SetRow(fill, fillRow);
             col.Children.Add(fill);
 
@@ -246,47 +231,6 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             }
 
             return col;
-        }
-
-        // The used portion of a bar, outlined per the chosen bar style. Plain is a bare rounded
-        // block; Border rings it evenly; 3D Border lays a lit edge and a shaded edge over it so the
-        // bar reads as raised. The bevel is two overlaid Borders because a single one can only carry
-        // one brush, and the two halves need different colours.
-        private FrameworkElement BuildFill(Color color)
-        {
-            var corners = new CornerRadius(CornerRadius);
-            var fill = new Border
-            {
-                Background = new SolidColorBrush(color),
-                CornerRadius = corners,
-            };
-
-            double size = Math.Max(0, _skin.Size);
-            if (size <= 0 || _skin.Style == BarStyle.Plain)
-                return fill;
-
-            if (_skin.Style == BarStyle.Border)
-            {
-                fill.BorderBrush = new SolidColorBrush(_skin.Border);
-                fill.BorderThickness = new Thickness(size);
-                return fill;
-            }
-
-            var bevel = new Grid();
-            bevel.Children.Add(fill);
-            bevel.Children.Add(new Border
-            {
-                BorderBrush = new SolidColorBrush(_skin.Highlight),
-                BorderThickness = new Thickness(size, size, 0, 0),   // top + left
-                CornerRadius = corners,
-            });
-            bevel.Children.Add(new Border
-            {
-                BorderBrush = new SolidColorBrush(_skin.Lowlight),
-                BorderThickness = new Thickness(0, 0, size, size),   // right + bottom
-                CornerRadius = corners,
-            });
-            return bevel;
         }
 
         private FrameworkElement BuildYAxis(Color text)
@@ -344,14 +288,6 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                     tb.LayoutTransform = new RotateTransform(-90);   // 90° counter-clockwise
                 return tb;
             }, _glow);
-
-        // Natural width of a caption at a given font size, used to pick a size that fits the bar.
-        private static double MeasureWidth(string text, double fontSize)
-        {
-            var tb = new TextBlock { Text = text, FontSize = fontSize };
-            tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            return tb.DesiredSize.Width;
-        }
 
         private FrameworkElement BuildXLabel(Bar bar, Color text)
             => GlowEffect.Wrap(() =>

@@ -1,17 +1,27 @@
 using System.Text.Json.Serialization;
 using DiskSpaceMonitor.Widgets.Effects;
 
-namespace DiskSpaceMonitor.Widgets.VerticalBar
+namespace DiskSpaceMonitor.Widgets.BarGraph
 {
-    /// <summary>Which end of the axis 0% sits at, and therefore the direction the bars fill.</summary>
+    /// <summary>
+    /// Which end of the axis 0% sits at, and therefore the direction the bars grow. The first two
+    /// belong to the vertical bar graph and the last two to the horizontal one; each widget offers
+    /// only its own pair and normalises anything else back to its default.
+    /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum BarOrientation
     {
-        /// <summary>0% at the bottom: bars grow upwards from the x-axis.</summary>
+        /// <summary>0% at the bottom: bars grow upwards from the axis.</summary>
         BottomUp,
 
         /// <summary>0% at the top: bars hang downwards from the top of the plot.</summary>
         TopDown,
+
+        /// <summary>0% at the left: bars grow rightwards from the axis.</summary>
+        LeftToRight,
+
+        /// <summary>0% at the right: bars grow leftwards from the right of the plot.</summary>
+        RightToLeft,
     }
 
     /// <summary>How each bar's fill is outlined.</summary>
@@ -30,25 +40,27 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
     }
 
     /// <summary>
-    /// Configuration for the vertical bar graph widget: a bar per drive filled to its used %,
+    /// Configuration shared by both bar graph widgets: a bar per drive filled to its used %,
     /// coloured by free-space status (healthy/low/critical). The transparency of the unused part of
-    /// each bar, the status colours, the track/text colours, and the thresholds are all configurable.
+    /// each bar, the status colours, the track/text colours, the thresholds, the bar outline and the
+    /// text glow are all configurable. The vertical and horizontal widgets persist their own copy
+    /// under their own style id, so each keeps its own settings.
     /// </summary>
-    public sealed class VerticalBarConfig : IWidgetConfig
+    public sealed class BarGraphConfig : IWidgetConfig
     {
         /// <summary>Which way round the axis runs, and so the direction the bars fill.</summary>
         public BarOrientation Orientation { get; set; } = BarOrientation.BottomUp;
 
-        /// <summary>Width of each bar as a percent (10–100) of its column slot.</summary>
+        /// <summary>Thickness of each bar as a percent (10–100) of its slot.</summary>
         public double BarWidthPercent { get; set; } = 80;
 
         /// <summary>Opacity of the unused part of each bar (0 = hidden, 1 = solid).</summary>
         public double TrackOpacity { get; set; } = 0.2;
 
-        /// <summary>Show the used space (humanized, e.g. "1.5 GB") on top of each bar.</summary>
+        /// <summary>Show the used space (humanized, e.g. "1.5 GB") against each bar.</summary>
         public bool ShowUsedSpace { get; set; }
 
-        /// <summary>Show the total drive space (humanized) as a header above each bar.</summary>
+        /// <summary>Show the total drive space (humanized) at the 100% end of each bar.</summary>
         public bool ShowTotalSpace { get; set; }
 
         /// <summary>Percent of free space below which a bar shows the "low" colour.</summary>

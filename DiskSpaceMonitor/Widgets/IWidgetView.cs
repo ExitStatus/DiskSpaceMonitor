@@ -23,5 +23,15 @@ namespace DiskSpaceMonitor.Widgets
         /// <summary>Natural width ÷ height of the content; the window sizes itself to match so it
         /// hugs the widget. 1 = square (the default for widgets that don't care).</summary>
         double AspectRatio => 1;
+
+        /// <summary>
+        /// Which dimension the user controls. False (the default) means the window keeps its height
+        /// and derives its width from <see cref="AspectRatio"/> — right when the content grows
+        /// sideways, like the vertical bar graph adding bars. True flips that: the window keeps its
+        /// width and derives its height, for content that grows downwards, like the horizontal bar
+        /// graph. The derived dimension is the one that must be free to follow the content, or
+        /// content that changes size would just be rescaled to fit the old frame.
+        /// </summary>
+        bool HeightFollowsContent => false;
     }
 }

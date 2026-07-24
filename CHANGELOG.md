@@ -39,6 +39,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   size and colour), or **3D Border** (a bevel of the chosen size, with the
   **highlight** along the top and left and the **lowlight** down the right and
   along the bottom, so the bar reads as raised).
+- **Horizontal bar graph widget** – a fourth style: the vertical bar graph turned on
+  its side. A bar per drive runs across a 0–100% (used space) axis with the bars
+  stacked down the window, the drive label and its used % at the 0% end, and the
+  total space at the 100% end. An **Orientation** dropdown picks **Left to Right**
+  (0% at the left — the default) or **Right to Left**, mirroring the axis, the fill
+  direction, the labels and the totals. It offers the same bar thickness,
+  unused-space transparency, colours, thresholds, caption toggles, bar styles and
+  text glow as the vertical graph, and keeps its own copy of them all. Captions
+  scale to the bar's slot instead of rotating, since a horizontal bar has the whole
+  axis to write along. The gap between bars is fixed, so reducing the thickness
+  closes the graph up and the window shortens to fit rather than spreading the bars
+  out: this is the first widget sized by its **width**, with its height following its
+  content. Both graphs now share their configuration, settings editor and fill
+  rendering (`Widgets/BarGraph/`), so an option added to one arrives in the other.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as
