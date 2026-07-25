@@ -112,7 +112,8 @@ DiskSpaceMonitor.slnx
 DiskSpaceMonitor/              # WPF app
   App.xaml(.cs)               # composition root + window/lifecycle manager
   Drives/                     # ByteSize, DiskGauge, DriveReader, DriveCatalog, records
-  Widgets/                    # widget abstraction (IWidget, WidgetRegistry, RingArc, …)
+  Widgets/                    # widget abstraction (IWidget, WidgetRegistry, RingArc,
+                              #   WidgetTypography + GlobalAppearance, …)
     Circular/                 # circular gauge – one window per drive (view, config, editor)
     Concentric/               # concentric circles – one window, a ring per drive
     BarGraph/                 # shared by both bar graphs (config, editor, widget base, fill)
@@ -124,7 +125,8 @@ DiskSpaceMonitor/              # WPF app
   Startup/                    # AutoStartService (HKCU Run entry)
   Interop/                    # NativeMethods, CtrlHook (Win32)
   Diagnostics/                # ErrorLog
-  Views/                      # MainWindow, SettingsWindow, shared controls
+  Views/                      # MainWindow, SettingsWindow, the colour and font
+                              #   pickers, shared controls
 DiskSpaceMonitor.UnitTests/   # NUnit + FluentAssertions, mirrors the app folders
 ```
 
@@ -134,7 +136,9 @@ interfaces, so it's covered by unit tests; the WPF views are thin.
 
 **Adding a widget style:** drop a new folder under `Widgets/<Name>/` implementing
 `IWidget` (metadata, view, config codec, settings tabs) and register it in the
-`WidgetRegistry` — nothing style-specific leaks into the rest of the app.
+`WidgetRegistry` — nothing style-specific leaks into the rest of the app. Its view
+also takes the app-wide `WidgetTypography`, so its text uses the chosen font and
+stays within the size bounds like every other style's.
 
 ## Requirements
 
