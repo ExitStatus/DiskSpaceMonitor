@@ -1,6 +1,8 @@
 using System.Text.Json.Nodes;
 using DiskSpaceMonitor.Widgets;
 using DiskSpaceMonitor.Widgets.BarGraph;
+using DiskSpaceMonitor.Widgets.Circular;
+using DiskSpaceMonitor.Widgets.Concentric;
 using DiskSpaceMonitor.Widgets.HorizontalBar;
 using DiskSpaceMonitor.Widgets.VerticalBar;
 using FluentAssertions;
@@ -26,7 +28,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             var c = (BarGraphConfig)_widget.DefaultConfig();
 
             c.Orientation.Should().Be(BarOrientation.LeftToRight);
-            c.BarWidthPercent.Should().Be(80);
+            c.BarGapPercent.Should().Be(20);
             c.BarStyle.Should().Be(BarStyle.Plain);
             c.TrackColor.Should().Be("#6E7686");
         }
@@ -43,12 +45,12 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void ReadConfig_OmittedOrientation_DefaultsToLeftToRight()
         {
-            var node = JsonNode.Parse("""{ "BarWidthPercent": 50 }""");
+            var node = JsonNode.Parse("""{ "BarGapPercent": 50 }""");
 
             var c = (BarGraphConfig)_widget.ReadConfig(node);
 
             c.Orientation.Should().Be(BarOrientation.LeftToRight);
-            c.BarWidthPercent.Should().Be(50);
+            c.BarGapPercent.Should().Be(50);
         }
 
         // The two graphs share one config type, so a blob can name an orientation belonging to the
@@ -61,21 +63,24 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             ((BarGraphConfig)_widget.ReadConfig(node)).Orientation.Should().Be(BarOrientation.LeftToRight);
         }
 
-        // The horizontal graph grows downwards, so its window must keep its width and derive its
-        // height — the reverse of every other widget. If this flips, thinning the bars would rescale
-        // the content to fill the old frame instead of shortening the window.
+        // Both graphs fill whatever rectangle the user drags, so their windows must offer both
+        // dimensions (side handles as well as corners). If this flips they would be forced square
+        // and a stretch in one direction would rescale the whole chart instead of the bars.
+        // The cast is needed because ResizesFreely is a default interface member.
         [Test]
         [Apartment(System.Threading.ApartmentState.STA)]
-        public void HorizontalView_LetsItsHeightFollowTheContent()
+        public void BothBarGraphs_SizeEachDirectionSeparately()
         {
-            ((IWidgetView)new HorizontalBarView()).HeightFollowsContent.Should().BeTrue();
+            ((IWidgetView)new HorizontalBarView()).ResizesFreely.Should().BeTrue();
+            ((IWidgetView)new VerticalBarView()).ResizesFreely.Should().BeTrue();
         }
 
         [Test]
         [Apartment(System.Threading.ApartmentState.STA)]
-        public void VerticalView_KeepsHeightAsTheUserDimension()
+        public void RoundWidgets_StaySquare()
         {
-            ((IWidgetView)new VerticalBarView()).HeightFollowsContent.Should().BeFalse();
+            ((IWidgetView)new CircularView()).ResizesFreely.Should().BeFalse();
+            ((IWidgetView)new ConcentricView()).ResizesFreely.Should().BeFalse();
         }
 
         [Test]

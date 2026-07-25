@@ -21,7 +21,9 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
 
         public FrameworkElement View => _gauge;
 
-        public double AspectRatio => _gauge.DesignAspect;
+        /// <summary>The chart fills whatever rectangle the user drags, so both dimensions are theirs
+        /// to set: a wider window widens the bars, a taller one lengthens them.</summary>
+        public bool ResizesFreely => true;
 
         public void Update(IReadOnlyList<DriveSpace> drives)
         {
@@ -62,16 +64,19 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                 bars.Add(new Bar(letter, used, fill, usedLabel, totalLabel));
             }
 
+            // The outline size and corner rounding are given at the gauge's reference size; it scales
+            // them with its text so they keep their weight relative to the graph.
             var skin = new BarSkin(
                 _config.BarStyle,
                 _config.BorderSize,
+                BarGraphParts.CornerRadius,
                 ColorUtil.Parse(_config.BorderColor, Colors.White),
                 ColorUtil.Parse(_config.HighlightColor, Colors.White),
                 ColorUtil.Parse(_config.LowlightColor, Colors.Black));
 
             _gauge.Render(bars, ColorUtil.Parse(_config.TrackColor, Color.FromRgb(0x6E, 0x76, 0x86)),
                 _config.TrackOpacity, ColorUtil.Parse(_config.TextColor, Colors.White),
-                _config.BarWidthPercent / 100.0, _config.Orientation, skin, GlowEffect.Build(_config.Glow));
+                _config.BarGapPercent / 100.0, _config.Orientation, skin, GlowEffect.Build(_config.Glow));
         }
     }
 }

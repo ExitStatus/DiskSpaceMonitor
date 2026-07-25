@@ -51,8 +51,10 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         /// <summary>Which way round the axis runs, and so the direction the bars fill.</summary>
         public BarOrientation Orientation { get; set; } = BarOrientation.BottomUp;
 
-        /// <summary>Thickness of each bar as a percent (10–100) of its slot.</summary>
-        public double BarWidthPercent { get; set; } = 80;
+        /// <summary>Space between neighbouring bars as a percent (0–50) of each bar's slot. The
+        /// bars themselves take the rest, so together they always fill the window the user set —
+        /// this controls how they are divided up, not how big the graph is.</summary>
+        public double BarGapPercent { get; set; } = 20;
 
         /// <summary>Opacity of the unused part of each bar (0 = hidden, 1 = solid).</summary>
         public double TrackOpacity { get; set; } = 0.2;

@@ -5,7 +5,7 @@
         xmlns:local="clr-namespace:DiskSpaceMonitor.Views"
         Title="Disk Space Monitor"
         Width="200" Height="200"
-        MinWidth="120" MinHeight="120"
+        MinWidth="60" MinHeight="60"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -33,6 +33,27 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Side handles, shown only for widgets the user sizes in each direction separately.
+             Pills rather than circles, lying along the edge they stretch, so it reads as a
+             one-axis drag at a glance. -->
+        <Style x:Key="ResizeHandleH" TargetType="prim:Thumb">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="prim:Thumb">
+                        <Border Background="#FFFFFFFF" BorderBrush="#FF3A78C2" BorderThickness="2"
+                                CornerRadius="5"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ResizeHandleV" TargetType="prim:Thumb" BasedOn="{StaticResource ResizeHandleH}">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="22"/>
         </Style>
 
         <!-- Round icon buttons (close / settings) shown in the edit overlay. -->
@@ -90,6 +111,28 @@
                         HorizontalAlignment="Right" VerticalAlignment="Bottom"
                         Margin="3" Cursor="SizeNWSE"
                         DragStarted="OnResizeStarted" DragDelta="OnResizeDelta" DragCompleted="OnResizeCompleted"/>
+
+            <!-- Side handles: only for widgets that size each direction separately (the bar
+                 graphs), so a square widget never offers a drag that can't do anything. -->
+            <Grid x:Name="EdgeHandles" Visibility="Collapsed">
+                <prim:Thumb Style="{StaticResource ResizeHandleV}" Tag="Left"
+                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Margin="3" Cursor="SizeWE"
+                            DragStarted="OnResizeStarted" DragDelta="OnResizeDelta" DragCompleted="OnResizeCompleted"/>
+                <prim:Thumb Style="{StaticResource ResizeHandleV}" Tag="Right"
+                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Margin="3" Cursor="SizeWE"
+                            DragStarted="OnResizeStarted" DragDelta="OnResizeDelta" DragCompleted="OnResizeCompleted"/>
+                <prim:Thumb Style="{StaticResource ResizeHandleH}" Tag="Top"
+                            HorizontalAlignment="Center" VerticalAlignment="Top"
+                            Margin="3" Cursor="SizeNS"
+                            DragStarted="OnResizeStarted" DragDelta="OnResizeDelta" DragCompleted="OnResizeCompleted"/>
+                <!-- Nudged left of centre to clear the settings button, which sits dead centre. -->
+                <prim:Thumb Style="{StaticResource ResizeHandleH}" Tag="Bottom"
+                            HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                            Margin="0,0,52,3" Cursor="SizeNS"
+                            DragStarted="OnResizeStarted" DragDelta="OnResizeDelta" DragCompleted="OnResizeCompleted"/>
+            </Grid>
 
             <!-- Settings button, bottom-centre. -->
             <Button Style="{StaticResource IconButton}" Content="⚙" Click="OnSettingsClick"

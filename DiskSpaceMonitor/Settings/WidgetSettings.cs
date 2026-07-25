@@ -37,15 +37,29 @@ namespace DiskSpaceMonitor.Settings
                 StyleConfigs.Remove(styleId);
         }
 
-        /// <summary>Placement/size of the single window used by a multi-drive widget (e.g. Concentric).
-        /// Null until first used. Kept separate from <see cref="Drives"/> so per-drive gauge positions
-        /// are preserved when switching widgets.</summary>
-        public DriveWidgetConfig? SingleInstance { get; set; }
+        /// <summary>Placement/size of the single window used by each multi-drive style (Concentric
+        /// and the two bar graphs), keyed by widget id. Kept separate from <see cref="Drives"/> so
+        /// per-drive gauge positions are preserved when switching widgets, and kept per style so a
+        /// graph the user stretched wide isn't imposed on the next one they pick.</summary>
+        public Dictionary<string, DriveWidgetConfig> SingleInstances { get; set; } = new();
+
+        /// <summary>The stored placement for a multi-drive style, creating it on first use.</summary>
+        public DriveWidgetConfig SingleInstanceFor(string styleId)
+        {
+            if (!SingleInstances.TryGetValue(styleId, out var placement))
+                SingleInstances[styleId] = placement = new DriveWidgetConfig { DrivePath = "", Size = 240 };
+            return placement;
+        }
 
         // --- Legacy single-style config (v1.1.0, one blob for the active style). Migrated into
         //     StyleConfigs on load. ---
         [JsonInclude, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public JsonObject? StyleConfig { get; set; }
+
+        // --- Legacy shared multi-drive placement (one record for every multi-drive style, from
+        //     before they could be sized freely). Migrated into SingleInstances on load. ---
+        [JsonInclude, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public DriveWidgetConfig? SingleInstance { get; set; }
 
         // --- Legacy single-widget fields (pre multi-drive). Migrated on load. ---
         [JsonInclude, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -120,6 +134,12 @@ namespace DiskSpaceMonitor.Settings
             if (StyleConfig != null && !StyleConfigs.ContainsKey(Style))
                 StyleConfigs[Style] = StyleConfig;
             StyleConfig = null;
+
+            // 4. The one shared multi-drive placement -> the per-style map. It can only have been
+            //    left by the style that was active when it was written, so that is where it lands.
+            if (SingleInstance != null && !SingleInstances.ContainsKey(Style))
+                SingleInstances[Style] = SingleInstance;
+            SingleInstance = null;
         }
 
         // Keys match CircularConfig property names; values come from the legacy globals with the

@@ -16,21 +16,30 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
     /// Draws a vertical bar per drive: the y-axis runs 0–100% (used space) and each bar fills from
     /// the 0% end to its used %. The unused part beyond the fill is a faint track. Bottom-up puts
     /// 0% at the bottom (bars grow up); top-down flips the axis so 0% is at the top and the bars
-    /// hang down. Built from proportional Grid rows so the bars reflow smoothly when resized.
+    /// hang down. Built from proportional Grid cells so the bars fill the window in both
+    /// directions: widen it and the bars widen, heighten it and they lengthen.
     /// </summary>
     public partial class VerticalBarGauge : UserControl
     {
-        // Fixed design height; the width sizes to content so the graph hugs the bars. The Viewbox
-        // scales it (and every label) to the actual window size.
-        private const double DesignHeight = 200;
-        private const double MaxBarWidth = 46;  // bar thickness at 100% width
-        private const double MaxGap = 14;       // gap between bars at 100% width (both scale with width)
-        private const double EdgePad = 14;      // room on the right for outer label overflow
+        // The size at which the text below renders at its literal font size. The graph scales its
+        // text by whichever axis is proportionally smaller against this reference, so stretching in
+        // one direction alone resizes the bars and leaves the text alone; only growing in both
+        // directions makes the text bigger.
+        private const double RefWidth = 220;
+        private const double RefHeight = 200;
+
+        private const double EdgePad = 14;             // room on the right for outer label overflow
+        private const double AxisFont = 10;            // y-axis ticks
+        private const double AxisGap = 6;              // space between the y-axis and the plot
+        private const double LetterFont = 11;          // the drive letter
         private const double CaptionBaseFont = 10;     // default size for the used/total captions
         private const double CaptionMinFont = 6;       // shrink down to here before rotating
         private const double CaptionRotatedFont = 8;   // size used once rotated
 
-        private double _aspect = 1;
+        // Smallest and largest text scale, so a widget squeezed to the minimum still reads and a
+        // full-screen one doesn't turn into a poster.
+        private const double MinScale = 0.4;
+        private const double MaxScale = 6;
 
         // The outer-glow effect for this render, or null when off. Each text element is built through
         // GlowEffect.Wrap so the glow sits behind crisp glyphs rather than blurring the font.
@@ -43,41 +52,71 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
         // How this render outlines each bar's fill.
         private BarSkin _skin;
 
-        /// <summary>Content width ÷ height after the last render; the window fits itself to this.</summary>
-        internal double DesignAspect => _aspect;
+        // The last render's inputs and the scale they were drawn at, so a resize can redraw them at
+        // the new text scale. Null until the first render.
+        private RenderArgs? _last;
+        private double _scale = 1;
+
+        /// <summary>Everything <see cref="Render"/> was given, kept so a resize can replay it.</summary>
+        private readonly record struct RenderArgs(IReadOnlyList<Bar> Bars, Color Track, double TrackOpacity,
+            Color Text, double Gap, BarOrientation Orientation, BarSkin Skin, Effect? Glow);
 
         public VerticalBarGauge()
         {
             InitializeComponent();
+
+            // Only the text scale depends on the window size — the bars stretch on their own — so a
+            // resize only needs a redraw when the scale has actually moved.
+            SizeChanged += (_, _) =>
+            {
+                if (_last is not null && Math.Abs(CurrentScale - _scale) > 0.005)
+                    Build();
+            };
         }
 
+        /// <summary>Text scale for the current window: the smaller of the two axis ratios, so text
+        /// only grows when the graph has grown in both directions.</summary>
+        private double CurrentScale => Math.Clamp(
+            Math.Min(ActualWidth / RefWidth, ActualHeight / RefHeight), MinScale, MaxScale);
+
         internal void Render(IReadOnlyList<Bar> bars, Color track, double trackOpacity, Color text,
-            double barWidth, BarOrientation orientation, BarSkin skin, Effect? glow)
+            double gap, BarOrientation orientation, BarSkin skin, Effect? glow)
         {
-            _glow = glow;
-            _topDown = orientation == BarOrientation.TopDown;
-            _skin = skin;
+            _last = new RenderArgs(bars, track, trackOpacity, text, gap, orientation, skin, glow);
+            Build();
+        }
+
+        private void Build()
+        {
+            if (_last is not { } args)
+                return;
+
+            _glow = args.Glow;
+            _topDown = args.Orientation == BarOrientation.TopDown;
+            _scale = CurrentScale;
+            _skin = args.Skin with
+            {
+                Size = args.Skin.Size * _scale,
+                Corner = BarGraphParts.Corner(_scale),
+            };
+
             Root.Children.Clear();
             Root.ColumnDefinitions.Clear();
             Root.RowDefinitions.Clear();
 
+            var bars = args.Bars;
             if (bars.Count == 0)
-            {
-                Root.Width = Root.Height = 0;
-                _aspect = 1;
                 return;
-            }
 
-            // Fixed design height (so the star-sized bar rows have a height to divide) but the width
-            // is left to size to content: as the bars get narrower the design – and therefore the
-            // rendered graph – gets narrower too, hugging the bars instead of leaving space at the
-            // edges. The plot column is Auto so the gridlines span exactly the bar group.
-            Root.Height = DesignHeight;
-            Root.Width = double.NaN;
+            double axisFont = AxisFont * _scale;
+            double edgePad = EdgePad * _scale;
+            double axisGap = AxisGap * _scale;
 
-            Root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });          // y-axis
-            Root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });          // plot (bars)
-            Root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(EdgePad) });  // right label overflow
+            // The y-axis column is Auto (its ticks), the plot takes everything left over, so the
+            // bars always span the width the user gave the widget.
+            Root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                  // y-axis
+            Root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // plot
+            Root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(edgePad) });          // label overflow
             // Both annotation rows are Auto; which one holds the totals and which holds the drive
             // labels swaps with the orientation, so each stays on its own end of the axis.
             Root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // annotations above
@@ -89,15 +128,20 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             int totalsRow = _topDown ? 2 : 0;
             int labelsRow = _topDown ? 0 : 2;
 
-            byte trackAlpha = (byte)(Math.Clamp(trackOpacity, 0, 1) * 255);
-            var trackBrush = new SolidColorBrush(Color.FromArgb(trackAlpha, track.R, track.G, track.B));
+            byte trackAlpha = (byte)(Math.Clamp(args.TrackOpacity, 0, 1) * 255);
+            var trackBrush = new SolidColorBrush(Color.FromArgb(trackAlpha, args.Track.R, args.Track.G, args.Track.B));
 
-            // Bar thickness and the gap between bars both scale with the width setting, so a narrower
-            // bar also sits closer to its neighbours. The bars are centred in the plot as a group.
+            // Each drive gets an equal share of the plot; the gap setting says how much of that share
+            // is space rather than bar. The bars therefore always fill the window, and widening it
+            // widens them.
             int n = bars.Count;
-            double f = Math.Clamp(barWidth, 0.05, 1);
-            double barThickness = f * MaxBarWidth;
-            double gap = f * MaxGap;
+            double gap = Math.Clamp(args.Gap, 0, 0.5);
+
+            // What one bar will actually be, so the captions can be sized to fit it. The y-axis is
+            // Auto-width, so estimate it from the widest tick — the same text it will lay out.
+            double yAxisWidth = BarGraphParts.Measure("100%", axisFont).Width + axisGap;
+            double plotWidth = Math.Max(0, ActualWidth - yAxisWidth - edgePad);
+            double barThickness = plotWidth * (1 - gap) / n;
 
             // One uniform font size for the used/total captions so they fit within the bar width. If
             // that would drop below the minimum, keep the minimum and rotate the text 90° CCW instead,
@@ -108,51 +152,47 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                 if (!string.IsNullOrEmpty(b.UsedLabel)) captionTexts.Add(b.UsedLabel);
                 if (!string.IsNullOrEmpty(b.TotalLabel)) captionTexts.Add(b.TotalLabel);
             }
-            double captionFont = CaptionBaseFont;
+
+            double baseFont = CaptionBaseFont * _scale;
+            double captionFont = baseFont;
             bool rotateCaptions = false;
             if (captionTexts.Count > 0)
             {
-                double maxWidth = captionTexts.Max(c => BarGraphParts.Measure(c, CaptionBaseFont).Width);
-                double fitFont = maxWidth > 0 ? CaptionBaseFont * barThickness / maxWidth : CaptionBaseFont;
-                fitFont = Math.Min(CaptionBaseFont, fitFont);
-                rotateCaptions = fitFont < CaptionMinFont;
-                captionFont = rotateCaptions ? CaptionRotatedFont : fitFont;
+                double maxWidth = captionTexts.Max(c => BarGraphParts.Measure(c, baseFont).Width);
+                double fitFont = maxWidth > 0 ? baseFont * barThickness / maxWidth : baseFont;
+                fitFont = Math.Min(baseFont, fitFont);
+                rotateCaptions = fitFont < CaptionMinFont * _scale;
+                captionFont = rotateCaptions ? CaptionRotatedFont * _scale : fitFont;
             }
 
             // Total-space header, hugging the 100% end of the plot, aligned with each bar.
             if (bars.Any(b => !string.IsNullOrEmpty(b.TotalLabel)))
             {
-                var totals = BuildAlignedRow(n, barThickness, gap, i => BuildCaption(bars[i].TotalLabel, text, captionFont, rotateCaptions));
+                var totals = BuildAlignedRow(n, gap, i => BuildCaption(bars[i].TotalLabel, args.Text, captionFont, rotateCaptions));
                 totals.VerticalAlignment = _topDown ? VerticalAlignment.Top : VerticalAlignment.Bottom;
-                totals.Margin = _topDown ? new Thickness(0, 2, 0, 0) : new Thickness(0, 0, 0, 2);
+                totals.Margin = _topDown ? new Thickness(0, 2 * _scale, 0, 0) : new Thickness(0, 0, 0, 2 * _scale);
                 Root.Children.Add(Place(totals, totalsRow, col: 1));
             }
 
             // Y-axis (100 / 50 / 0) aligned to the plot area.
-            var yaxis = BuildYAxis(text);
-            yaxis.Margin = new Thickness(0, 0, 6, 0);
+            var yaxis = BuildYAxis(args.Text, axisFont);
+            yaxis.Margin = new Thickness(0, 0, axisGap, 0);
             Root.Children.Add(Place(yaxis, row: 1, col: 0));
 
-            // Plot: faint gridlines behind (full width), then the centred group of bars.
+            // Plot: faint gridlines behind (full width), then the bars spanning it.
             var plot = new Grid();
-            plot.Children.Add(BuildGridlines(text));
+            plot.Children.Add(BuildGridlines(args.Text));
 
-            var barRow = BuildAlignedRow(n, barThickness, gap, i => BuildBar(bars[i], trackBrush, trackAlpha, text, captionFont, rotateCaptions));
+            var barRow = BuildAlignedRow(n, gap, i => BuildBar(bars[i], trackBrush, trackAlpha, args.Text, captionFont, rotateCaptions));
             barRow.VerticalAlignment = VerticalAlignment.Stretch;
             plot.Children.Add(barRow);
 
             Root.Children.Add(Place(plot, row: 1, col: 1));
 
             // Drive labels (letter + used %), aligned with the bars at the 0% end of the axis.
-            var labels = BuildAlignedRow(n, barThickness, gap, i => BuildXLabel(bars[i], text));
-            labels.Margin = _topDown ? new Thickness(0, 0, 0, 4) : new Thickness(0, 4, 0, 0);
+            var labels = BuildAlignedRow(n, gap, i => BuildXLabel(bars[i], args.Text));
+            labels.Margin = _topDown ? new Thickness(0, 0, 0, 4 * _scale) : new Thickness(0, 4 * _scale, 0, 0);
             Root.Children.Add(Place(labels, labelsRow, col: 1));
-
-            // Record the content's aspect (its natural width over the fixed design height) so the
-            // window can size itself to it. Measuring picks up the auto-sized y-axis and bar group.
-            Root.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            double w = Root.DesiredSize.Width, h = Root.DesiredSize.Height;
-            _aspect = (w > 0 && h > 0) ? w / h : 1;
         }
 
         private static FrameworkElement Place(FrameworkElement e, int row, int col)
@@ -162,24 +202,29 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             return e;
         }
 
-        // A horizontally-centred grid of fixed-width bar columns separated by fixed-width gaps, with
-        // one child per bar. Sharing this layout keeps the bars, their captions and their labels
-        // aligned regardless of the bar width.
-        private static Grid BuildAlignedRow(int count, double barThickness, double gap, Func<int, FrameworkElement> makeChild)
+        // One equal, proportional slot per drive spanning the plot, with the bar taking all of its
+        // slot but the gap and half a gap sitting either side of it — so the spacing stays even
+        // including at the two ends, and everything grows with the window. Sharing this layout keeps
+        // the bars, their captions and their labels aligned.
+        private static Grid BuildAlignedRow(int count, double gap, Func<int, FrameworkElement> makeChild)
         {
-            var grid = new Grid { HorizontalAlignment = HorizontalAlignment.Center };
+            var grid = new Grid { HorizontalAlignment = HorizontalAlignment.Stretch };
             for (int i = 0; i < count; i++)
-            {
-                if (i > 0)
-                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(gap) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(barThickness) });
-            }
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             for (int i = 0; i < count; i++)
             {
+                var slot = new Grid();
+                slot.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(gap / 2, GridUnitType.Star) });
+                slot.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1 - gap, GridUnitType.Star) });
+                slot.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(gap / 2, GridUnitType.Star) });
+
                 var child = makeChild(i);
-                Grid.SetColumn(child, i * 2);   // bar columns sit at even indices (gaps are odd)
-                grid.Children.Add(child);
+                Grid.SetColumn(child, 1);
+                slot.Children.Add(child);
+
+                Grid.SetColumn(slot, i);
+                grid.Children.Add(slot);
             }
 
             return grid;
@@ -202,8 +247,8 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                 var track = new Rectangle
                 {
                     Fill = trackBrush,
-                    RadiusX = BarGraphParts.CornerRadius,
-                    RadiusY = BarGraphParts.CornerRadius,
+                    RadiusX = _skin.Corner,
+                    RadiusY = _skin.Corner,
                 };
                 Grid.SetRowSpan(track, 2);
                 col.Children.Add(track);
@@ -219,7 +264,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             if (!string.IsNullOrEmpty(bar.UsedLabel))
             {
                 var caption = BuildCaption(bar.UsedLabel, text, captionFont, rotate);
-                double nudge = rotate ? 6 : 2;   // rotated: nudged a further 4px clear of the end
+                double nudge = (rotate ? 6 : 2) * _scale;   // rotated: nudged a further 4px clear of the end
                 caption.Margin = _topDown ? new Thickness(0, nudge, 0, 0) : new Thickness(0, 0, 0, nudge);
 
                 // Horizontal captions sit in the unused row so they ride the fill's leading edge;
@@ -233,22 +278,22 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             return col;
         }
 
-        private FrameworkElement BuildYAxis(Color text)
+        private FrameworkElement BuildYAxis(Color text, double fontSize)
         {
-            var grid = new Grid { Margin = new Thickness(0, 0, 6, 0) };
+            var grid = new Grid();
 
             // 0% sits at the axis origin: the bottom normally, the top when flipped.
-            grid.Children.Add(AxisTick(_topDown ? "0%" : "100%", text, VerticalAlignment.Top));
-            grid.Children.Add(AxisTick("50%", text, VerticalAlignment.Center));
-            grid.Children.Add(AxisTick(_topDown ? "100%" : "0%", text, VerticalAlignment.Bottom));
+            grid.Children.Add(AxisTick(_topDown ? "0%" : "100%", text, fontSize, VerticalAlignment.Top));
+            grid.Children.Add(AxisTick("50%", text, fontSize, VerticalAlignment.Center));
+            grid.Children.Add(AxisTick(_topDown ? "100%" : "0%", text, fontSize, VerticalAlignment.Bottom));
             return grid;
         }
 
-        private FrameworkElement AxisTick(string label, Color text, VerticalAlignment v)
+        private FrameworkElement AxisTick(string label, Color text, double fontSize, VerticalAlignment v)
             => GlowEffect.Wrap(() => new TextBlock
             {
                 Text = label,
-                FontSize = 10,
+                FontSize = fontSize,
                 Opacity = 0.7,
                 Foreground = new SolidColorBrush(text),
                 HorizontalAlignment = HorizontalAlignment.Right,
@@ -297,11 +342,11 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                     TextAlignment = TextAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Foreground = new SolidColorBrush(text),
-                    FontSize = 11,
+                    FontSize = LetterFont * _scale,
                 };
                 tb.Inlines.Add(new Run(bar.Letter) { FontWeight = FontWeights.SemiBold });
                 tb.Inlines.Add(new LineBreak());
-                tb.Inlines.Add(new Run($"{Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%") { FontSize = 10 });
+                tb.Inlines.Add(new Run($"{Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%") { FontSize = AxisFont * _scale });
                 return tb;
             }, _glow);
     }

@@ -28,7 +28,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             c.BorderColor.Should().Be("#FFFFFF");
             c.HighlightColor.Should().Be("#FFFFFF");
             c.LowlightColor.Should().Be("#000000");
-            c.BarWidthPercent.Should().Be(80);
+            c.BarGapPercent.Should().Be(20);
             c.TrackOpacity.Should().Be(0.2);
             c.ShowUsedSpace.Should().BeFalse();
             c.ShowTotalSpace.Should().BeFalse();
@@ -54,7 +54,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
                 BorderColor = "#ABCDEF",
                 HighlightColor = "#C0FFEE",
                 LowlightColor = "#123456",
-                BarWidthPercent = 55,
+                BarGapPercent = 35,
                 TrackOpacity = 0.35,
                 ShowUsedSpace = true,
                 ShowTotalSpace = true,
@@ -81,7 +81,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             loaded.BorderColor.Should().Be("#ABCDEF");
             loaded.HighlightColor.Should().Be("#C0FFEE");
             loaded.LowlightColor.Should().Be("#123456");
-            loaded.BarWidthPercent.Should().Be(55);
+            loaded.BarGapPercent.Should().Be(35);
             loaded.TrackOpacity.Should().Be(0.35);
             loaded.ShowUsedSpace.Should().BeTrue();
             loaded.ShowTotalSpace.Should().BeTrue();
@@ -116,12 +116,25 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void ReadConfig_OmittedOrientation_DefaultsToBottomUp()
         {
-            var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarWidthPercent": 50 }""");
+            var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarGapPercent": 50 }""");
 
             var c = (BarGraphConfig)_widget.ReadConfig(node);
 
             c.Orientation.Should().Be(BarOrientation.BottomUp);
-            c.BarWidthPercent.Should().Be(50);
+            c.BarGapPercent.Should().Be(50);
+        }
+
+        // Bars used to be sized by a "BarWidthPercent" setting; they now fill whatever window the
+        // user drags, so a blob still naming it is read without complaint and takes the gap default.
+        [Test]
+        public void ReadConfig_PreFreeSizingBarWidth_IsIgnored()
+        {
+            var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarWidthPercent": 55, "TrackOpacity": 0.5 }""");
+
+            var c = (BarGraphConfig)_widget.ReadConfig(node);
+
+            c.BarGapPercent.Should().Be(20);
+            c.TrackOpacity.Should().Be(0.5);
         }
 
         [Test]
@@ -135,7 +148,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         [Test]
         public void ReadConfig_PreOutlineSettings_DefaultToPlain()
         {
-            var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarWidthPercent": 50, "TrackOpacity": 0.5 }""");
+            var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarGapPercent": 50, "TrackOpacity": 0.5 }""");
 
             var c = (BarGraphConfig)_widget.ReadConfig(node);
 

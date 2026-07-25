@@ -9,18 +9,17 @@ using DiskSpaceMonitor.Widgets.Effects;
 namespace DiskSpaceMonitor.Widgets.BarGraph
 {
     /// <summary>
-    /// Settings editor shared by both bar graph widgets: an Appearance tab (orientation, bar size,
-    /// unused-space transparency, the caption toggles and the low/critical thresholds), a Colours tab
-    /// (label text, the unused-bar track, and the healthy/low/critical status colours), and an
-    /// Effects tab (the bar outline style and the reusable text outer glow). The hosting widget
-    /// supplies the orientation choices and what to call the bar-size slider, which is all that
-    /// differs between the vertical and horizontal graphs.
+    /// Settings editor shared by both bar graph widgets: an Appearance tab (orientation, the gap
+    /// between bars, unused-space transparency, the caption toggles and the low/critical thresholds),
+    /// a Colours tab (label text, the unused-bar track, and the healthy/low/critical status colours),
+    /// and an Effects tab (the bar outline style and the reusable text outer glow). The hosting
+    /// widget supplies the orientation choices, which is all that differs between the vertical and
+    /// horizontal graphs — the graph's size is dragged on the widget itself, not set here.
     /// </summary>
     public sealed class BarGraphConfigEditor : IWidgetConfigEditor
     {
         private readonly Action _onChanged;
         private readonly (string Label, BarOrientation Value)[] _orientations;
-        private readonly string _barSizeLabel;
         private readonly IReadOnlyList<WidgetConfigTab> _tabs;
 
         private ComboBox _orientation = null!;
@@ -32,7 +31,7 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         private FrameworkElement _borderSizePanel = null!;
         private FrameworkElement _borderColourPanel = null!;
         private FrameworkElement _bevelColourPanel = null!;
-        private Slider _barWidth = null!;
+        private Slider _barGap = null!;
         private Slider _trackOpacity = null!;
         private CheckBox _showUsedSpace = null!;
         private CheckBox _showTotalSpace = null!;
@@ -47,13 +46,11 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         private bool _ready;
 
         /// <param name="orientations">The orientation choices to offer, in dropdown order.</param>
-        /// <param name="barSizeLabel">What to call the bar-size slider ("Bar width"/"Bar thickness").</param>
         public BarGraphConfigEditor(BarGraphConfig initial, Action onChanged,
-            (string Label, BarOrientation Value)[] orientations, string barSizeLabel)
+            (string Label, BarOrientation Value)[] orientations)
         {
             _onChanged = onChanged;
             _orientations = orientations;
-            _barSizeLabel = barSizeLabel;
             _glow = new GlowEffectEditor(initial.Glow, Raise);
 
             _tabs = new[]
@@ -70,7 +67,7 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         public IWidgetConfig CurrentConfig() => new BarGraphConfig
         {
             Orientation = Selected<BarOrientation>(_orientation),
-            BarWidthPercent = _barWidth.Value,
+            BarGapPercent = _barGap.Value,
             TrackOpacity = _trackOpacity.Value,
             ShowUsedSpace = _showUsedSpace.IsChecked == true,
             ShowTotalSpace = _showTotalSpace.IsChecked == true,
@@ -102,8 +99,8 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
             panel.Children.Add(new TextBlock { Text = "Orientation", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
             _orientation = AddCombo(panel, _orientations, initial.Orientation);
 
-            panel.Children.Add(new TextBlock { Text = _barSizeLabel, FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
-            _barWidth = AddSlider(panel, min: 10, max: 100, value: initial.BarWidthPercent,
+            panel.Children.Add(new TextBlock { Text = "Gap between bars", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
+            _barGap = AddSlider(panel, min: 0, max: 50, value: initial.BarGapPercent,
                 small: 5, large: 10, format: v => $"{v:0}%", topMargin: 0, addCaption: false);
 
             panel.Children.Add(new TextBlock { Text = "Unused space transparency", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });

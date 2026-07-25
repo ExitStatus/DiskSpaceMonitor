@@ -35,7 +35,8 @@ namespace DiskSpaceMonitor
         private WidgetSettings _settings = null!;
         private CtrlHook? _ctrlHook;
         private DispatcherTimer? _trimTimer;
-        private bool _topologyShowsAll;   // what _windows is currently built for
+        private bool _topologyShowsAll;      // what _windows is currently built for
+        private string _topologyStyle = "";  // and whose saved placement they were built from
 
         /// <summary>The running application instance.</summary>
         public static App Instance => (App)Current;
@@ -59,7 +60,7 @@ namespace DiskSpaceMonitor
             if (_settings.Drives.Count == 0)
                 _settings.Drives.Add(new DriveWidgetConfig { DrivePath = _catalog.BootDrivePath });
 
-            RebuildWindows(_registry.Get(_settings.Style).ShowsAllDrives);
+            RebuildWindows(_settings.Style);
 
             _store.Save(_settings);
 
@@ -118,7 +119,7 @@ namespace DiskSpaceMonitor
             // Give unplaced widgets the first free, non-overlapping spot.
             if (double.IsNaN(cfg.Left) || double.IsNaN(cfg.Top))
             {
-                var spot = FindFreeSpot(cfg.Size);
+                var spot = FindFreeSpot(cfg.Width ?? cfg.Size, cfg.Height ?? cfg.Size);
                 cfg.Left = spot.X;
                 cfg.Top = spot.Y;
             }
@@ -129,23 +130,38 @@ namespace DiskSpaceMonitor
         }
 
         /// <summary>
-        /// Tear down and recreate the widget windows for the given topology: one window per drive
-        /// (single-drive widget), or a single window fed every drive (multi-drive widget). Safe
-        /// because the app uses OnExplicitShutdown, so closing all windows never exits.
+        /// True when the live windows already suit <paramref name="styleId"/>: the same instancing,
+        /// and — since each multi-drive style keeps its own window rectangle — built from that
+        /// style's own saved placement.
         /// </summary>
-        private void RebuildWindows(bool showsAllDrives)
+        private bool TopologySuits(string styleId)
         {
+            bool showsAll = _registry.Get(styleId).ShowsAllDrives;
+            return showsAll == _topologyShowsAll && (!showsAll || _topologyStyle == styleId);
+        }
+
+        /// <summary>
+        /// Tear down and recreate the widget windows for a style: one window per drive (single-drive
+        /// widget), or a single window fed every drive (multi-drive widget) placed at that style's
+        /// own saved rectangle. Safe because the app uses OnExplicitShutdown, so closing all windows
+        /// never exits.
+        /// </summary>
+        private void RebuildWindows(string styleId)
+        {
+            bool showsAllDrives = _registry.Get(styleId).ShowsAllDrives;
+
             foreach (var window in _windows.ToList())
                 window.Close();
             _windows.Clear();
 
             if (showsAllDrives)
             {
-                _settings.SingleInstance ??= new DriveWidgetConfig { DrivePath = "", Size = 240 };
-                var single = _settings.SingleInstance;
+                // Each multi-drive style keeps its own window rectangle, so switching between them
+                // restores the frame that style was last given rather than inheriting the last one's.
+                var single = _settings.SingleInstanceFor(styleId);
                 if (double.IsNaN(single.Left) || double.IsNaN(single.Top))
                 {
-                    var spot = FindFreeSpot(single.Size);
+                    var spot = FindFreeSpot(single.Width ?? single.Size, single.Height ?? single.Size);
                     single.Left = spot.X;
                     single.Top = spot.Y;
                 }
@@ -161,6 +177,7 @@ namespace DiskSpaceMonitor
             }
 
             _topologyShowsAll = showsAllDrives;
+            _topologyStyle = styleId;
         }
 
         /// <summary>Screen bounds of every widget except <paramref name="self"/>.</summary>
@@ -171,7 +188,7 @@ namespace DiskSpaceMonitor
                 .ToList();
 
         /// <summary>First bottom-right-anchored slot that doesn't overlap an existing widget.</summary>
-        private Point FindFreeSpot(double size)
+        private Point FindFreeSpot(double width, double height)
         {
             var wa = SystemParameters.WorkArea;
             var taken = _windows
@@ -182,17 +199,17 @@ namespace DiskSpaceMonitor
             const double margin = 40;
             const double gap = 12;
 
-            for (double top = wa.Bottom - size - margin; top >= wa.Top; top -= size + gap)
+            for (double top = wa.Bottom - height - margin; top >= wa.Top; top -= height + gap)
             {
-                for (double left = wa.Right - size - margin; left >= wa.Left; left -= size + gap)
+                for (double left = wa.Right - width - margin; left >= wa.Left; left -= width + gap)
                 {
-                    var candidate = new Rect(left, top, size, size);
+                    var candidate = new Rect(left, top, width, height);
                     if (!taken.Any(t => Layout.WidgetLayout.Overlaps(candidate, t)))
                         return new Point(left, top);
                 }
             }
 
-            return new Point(wa.Right - size - margin, wa.Bottom - size - margin);
+            return new Point(wa.Right - width - margin, wa.Bottom - height - margin);
         }
 
         /// <summary>Hide a single drive's widget (the ✕ button). Keeps at least one.</summary>
@@ -215,7 +232,11 @@ namespace DiskSpaceMonitor
             string savedWidget = _settings.Style;
             IWidgetConfig savedConfig = factory.ReadConfig(_settings.GetStyleConfig(_settings.Style));
             double savedOpacity = _settings.WidgetOpacity;
-            double newWidgetSize = source.Width;
+
+            // Size for any drive added while the dialog is open. Per-drive widgets are square, so a
+            // freely-sized source (a bar graph stretched wide) contributes its shorter side rather
+            // than handing a new gauge that whole span.
+            double newWidgetSize = Math.Min(source.Width, source.Height);
 
             // Each widget's initial config comes from its own stored blob (default if none yet), so
             // switching styles in the dialog restores that style's saved settings.
@@ -244,10 +265,10 @@ namespace DiskSpaceMonitor
                     _registry.Get(dialog.SelectedWidget).WriteConfig(dialog.SelectedConfig) as JsonObject);
                 _settings.WidgetOpacity = dialog.WidgetOpacity;
 
-                // Match the window topology to the chosen widget before reconciling drives.
-                bool targetShowsAll = _registry.Get(_settings.Style).ShowsAllDrives;
-                if (targetShowsAll != _topologyShowsAll)
-                    RebuildWindows(targetShowsAll);
+                // Match the windows to the chosen widget before reconciling drives — including a
+                // swap between two multi-drive styles, which each have their own saved rectangle.
+                if (!TopologySuits(_settings.Style))
+                    RebuildWindows(_settings.Style);
 
                 ApplyDriveSelection(dialog.SelectedDrivePaths, newWidgetSize);
 
@@ -259,22 +280,21 @@ namespace DiskSpaceMonitor
             else
             {
                 // Cancelled / closed: restore the saved topology + widget on every window.
-                bool savedShowsAll = _registry.Get(savedWidget).ShowsAllDrives;
-                if (savedShowsAll != _topologyShowsAll)
-                    RebuildWindows(savedShowsAll);
+                if (!TopologySuits(savedWidget))
+                    RebuildWindows(savedWidget);
                 foreach (var window in _windows)
                     window.ApplyWidget(savedWidget, savedConfig, savedOpacity);
             }
         }
 
         /// <summary>Apply an edited widget/config/opacity to the live windows immediately (live
-        /// preview). Rebuilds the window topology first if the previewed widget's instancing differs.
-        /// Mutates only windows — never <c>_settings</c> — so Cancel can revert cleanly.</summary>
+        /// preview). Rebuilds the windows first if they don't suit the previewed widget. Touches no
+        /// setting Cancel would need to revert — at most it opens the previewed style's placement
+        /// record, which is created on first use anyway and holds nothing the user chose.</summary>
         private void PreviewWidget(string widgetId, IWidgetConfig config, double widgetOpacity)
         {
-            bool showsAll = _registry.Get(widgetId).ShowsAllDrives;
-            if (showsAll != _topologyShowsAll)
-                RebuildWindows(showsAll);
+            if (!TopologySuits(widgetId))
+                RebuildWindows(widgetId);
 
             foreach (var window in _windows)
                 window.ApplyWidget(widgetId, config, widgetOpacity);

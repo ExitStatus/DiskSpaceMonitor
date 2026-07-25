@@ -20,7 +20,5 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             ("Bottom Up", BarOrientation.BottomUp),
             ("Top Down", BarOrientation.TopDown),
         };
-
-        protected override string BarSizeLabel => "Bar width";
     }
 }

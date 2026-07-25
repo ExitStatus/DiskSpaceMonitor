@@ -53,6 +53,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   out: this is the first widget sized by its **width**, with its height following its
   content. Both graphs now share their configuration, settings editor and fill
   rendering (`Widgets/BarGraph/`), so an option added to one arrives in the other.
+- **Free sizing for both bar graphs** – a bar graph is no longer a fixed shape you
+  scale. It gains a resize handle at the **centre of each side** as well as at each
+  corner, its width and height are set independently, and the chart fills whatever
+  rectangle you drag: stretch a horizontal graph sideways and its bars lengthen,
+  stretch it downwards and they thicken; the vertical graph does the same the other
+  way round. Text size follows the *smaller* of the two directions, so a one-way
+  stretch resizes the bars and leaves the labels alone — only a graph that has grown
+  in both directions gets bigger text. Each multi-drive style now remembers its own
+  window rectangle, so switching between the concentric, vertical and horizontal
+  styles restores the shape each was last given instead of reinterpreting one shared
+  number. Existing settings files are migrated on first load.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as
@@ -77,6 +88,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Appearance is now stored under a per-widget config block in `settings.json`;
   pre-1.1 settings files are migrated automatically on first load, preserving the
   existing look.
+- The bar graphs' **Bar width** / **Bar thickness** setting is replaced by **Gap
+  between bars** (0–50% of each bar's slot). The bars themselves are sized by the
+  window now — they always fill it — so the only thing left to choose is how much
+  of the space between them is gap.
+
+### Removed
+
+- The 600px ceiling on how large a widget could be dragged, and the 120px floor
+  under each dimension. A widget may now be sized anywhere from 60px up to filling
+  its monitor. The ceiling capped the vertical bar graph's on-screen scale at 3×,
+  which is what made it feel like the graph had a maximum size.
 
 ### Fixed
 
@@ -88,6 +110,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The vertical bar graph window no longer drifts left on restart. Its saved position was
   being constrained against the intermediate square size before the window was
   fitted to the bars, shoving a window near a screen's right edge sideways.
+- The horizontal bar graph no longer floats in a band of dead space. Its height was
+  derived from its width and its content's aspect, but a 120px minimum was then
+  applied to *both* dimensions, so below about 430px wide the window was left taller
+  than the chart and the chart was letterboxed inside it.
+- Neither bar graph resizes itself behind your back any more. The window used to be
+  fitted to the measured content, so changing the bar size, the caption toggles or
+  the drive set moved the frame the user had placed. The chart now reflows inside the
+  window instead.
 
 ## [1.0.0] - 2026-07-21
 

@@ -32,9 +32,9 @@ status):
   - **Vertical bar graph** – a single window with a vertical bar per drive on a
     0–100% (used space) axis, each bar coloured by status. An **Orientation** of
     *Bottom Up* (0% at the bottom, bars growing up) or *Top Down* (0% at the top,
-    bars hanging down), the bar width, the unused-space transparency, colours and
-    thresholds are all configurable; the window resizes to hug the bars (bars and
-    the gaps between them shrink together as you narrow them). The used and total
+    bars hanging down), the gap between bars, the unused-space transparency,
+    colours and thresholds are all configurable. The bars always fill the window,
+    so you set the graph's shape by dragging it (see below). The used and total
     space per drive can optionally be shown on/above each bar — those captions
     auto-size to one shared size that fits the bar, and rotate vertically when a
     bar is too narrow for horizontal text. An **Effects**
@@ -45,11 +45,15 @@ status):
     running across a 0–100% axis, stacked down the window, with the drive label at
     the 0% end and the total at the 100% end. Its **Orientation** is *Left to Right*
     (0% at the left) or *Right to Left* (0% at the right), and it offers the same
-    bar thickness, transparency, colours, thresholds, captions, bar styles and glow
-    as the vertical graph. Captions scale to the bar's slot rather than rotating,
-    since a horizontal bar has the whole axis to write along. The gap between bars
-    is fixed, so thinning them closes the graph up and the window shortens to fit —
-    this is the one widget you size by its width, with its height following the bars.
+    bar gap, transparency, colours, thresholds, captions, bar styles and glow as the
+    vertical graph. Captions scale to the bar's slot rather than rotating, since a
+    horizontal bar has the whole axis to write along.
+- **Bar graphs stretch in either direction** – both graphs get a resize handle at
+  the centre of each side as well as at each corner, and the chart fills whatever
+  rectangle you drag: stretch a horizontal graph sideways and its bars lengthen,
+  stretch it downwards and they thicken. There is no size cap beyond the monitor
+  itself. The labels only change size when the graph grows in *both* directions, so
+  a one-way stretch resizes the bars and leaves the text where it was.
 - **Pluggable widget styles** – new styles plug in by implementing a single
   interface, with their own settings tabs, in their own `Widgets/<Name>/` folder.
   Each style remembers its own configuration independently.
@@ -79,14 +83,15 @@ status):
   trimmed while idle to keep the memory footprint small.
 - **Remembers** every setting: each widget's position and size, the refresh
   interval, thresholds, and all appearance choices — and each style keeps its own
-  configuration, so switching styles (or restarting) never loses it.
+  configuration *and its own window rectangle*, so switching styles (or restarting)
+  never loses it.
 
 ## Controls
 
 | Action    | How                                                            |
 |-----------|----------------------------------------------------------------|
 | Move      | Hold **Ctrl**, click-drag anywhere on the widget               |
-| Resize    | Hold **Ctrl**, hover, drag a corner handle                     |
+| Resize    | Hold **Ctrl**, hover, drag a corner handle — or, on either bar graph, a side handle to stretch that way alone |
 | Settings  | Hold **Ctrl**, click the ⚙ button, or right-click → Settings…  |
 | Hide one  | Right-click → **Hide this drive** (Circular style only)        |
 | Quit      | Settings → **Exit Application**, or right-click → Exit application |
@@ -173,16 +178,17 @@ The settings dialog (⚙ button or right-click → Settings…) is tabbed:
     transparency, and the low/critical thresholds) and *Colours* (the label-text
     colour, the healthy/low/critical **chip status** colours, and a **ring colour
     per drive**).
-  - **Vertical bar graph** – *Appearance* (**Orientation**, bar width, unused-space
-    transparency, **Show used space** / **Show total space** toggles, and the
-    low/critical thresholds), *Colours* (label text, the unused-space track, and
-    the healthy/low/critical status colours), and *Effects* (a **Bar style** of
+  - **Vertical bar graph** – *Appearance* (**Orientation**, **Gap between bars**,
+    unused-space transparency, **Show used space** / **Show total space** toggles,
+    and the low/critical thresholds), *Colours* (label text, the unused-space track,
+    and the healthy/low/critical status colours), and *Effects* (a **Bar style** of
     Plain, Border or 3D Border with its size and colours, plus an outer-glow
-    radius and colour applied behind all the widget's text).
+    radius and colour applied behind all the widget's text). There is no bar-size
+    setting: the bars fill the window, so the gap is all that divides them up.
   - **Horizontal bar graph** – the same three tabs and the same settings, with
-    *Left to Right* / *Right to Left* orientations and the size slider labelled
-    **Bar thickness**. It keeps its own copy of every setting, so the two graphs
-    can be styled differently.
+    *Left to Right* / *Right to Left* orientations. It keeps its own copy of every
+    setting — and its own window size and position — so the two graphs can be
+    styled and shaped differently.
 
 Each colour is edited with a swatch, an editable `#RRGGBB` box (copy/paste), and a
 pipette button that opens a hue/saturation/brightness picker with gradient sliders

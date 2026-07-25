@@ -18,8 +18,11 @@ namespace DiskSpaceMonitor.Views
 {
     public partial class MainWindow : Window
     {
-        private const double MinSize = 120;
-        private const double MaxSize = 600;
+        private const double MinSize = 60;
+
+        // Fallback ceiling for the rare case the monitor's work area can't be read (the window
+        // isn't sourced yet). Generous enough never to be the binding constraint in practice.
+        private const double FallbackMaxSize = 4000;
 
         private readonly WidgetSettings _settings;
         private readonly DriveWidgetConfig _config;
@@ -41,7 +44,7 @@ namespace DiskSpaceMonitor.Views
         private bool _resizing;
         private Point _grabOffset;
 
-        // Screen position of the corner opposite the one being dragged; fixed for
+        // Screen position of the edges opposite the ones being dragged; fixed for
         // the duration of a resize so there is no feedback between moving the
         // window and moving the handle.
         private double _anchorX;
@@ -69,7 +72,10 @@ namespace DiskSpaceMonitor.Views
             if (showsAllDrives)
                 HideDriveItem.Visibility = Visibility.Collapsed;
 
-            Width = Height = Clamp(config.Size);
+            // A freely-sized style has its own saved rectangle; anything else (or a style being
+            // shown for the first time) starts square at the saved size.
+            Width = Clamp(config.Width ?? config.Size);
+            Height = Clamp(config.Height ?? config.Size);
 
             _diskTimer = new DispatcherTimer { Interval = RefreshInterval() };
             _diskTimer.Tick += (_, _) => RefreshDisk();
@@ -99,9 +105,8 @@ namespace DiskSpaceMonitor.Views
                 Top = _config.Top;
             }
 
-            // Apply the widget first so the window is at its true (aspect-fitted) size before we
-            // constrain it on-screen. Constraining the intermediate square size would shove a
-            // non-square widget (e.g. the vertical bar graph) sideways every restart.
+            // Apply the widget before constraining the window on-screen, so the edit overlay and
+            // the hosted view match the saved rectangle first.
             // (If App already pushed a widget via a live-preview rebuild, keep it.)
             if (!_viewInitialized)
                 ApplyWidget();
@@ -410,22 +415,28 @@ namespace DiskSpaceMonitor.Views
 
         // --- Resizing --------------------------------------------------------
 
+        // A handle's tag names the edges it moves: a corner names one of each axis ("TopLeft"),
+        // a side handle names only its own ("Left"), leaving the other axis untouched.
+        private static (bool Left, bool Top, bool DragsX, bool DragsY) Grip(object sender)
+        {
+            var tag = (string)((Thumb)sender).Tag;
+            bool left = tag.Contains("Left");
+            bool top = tag.Contains("Top");
+            return (left, top, left || tag.Contains("Right"), top || tag.Contains("Bottom"));
+        }
+
         private void OnResizeStarted(object sender, DragStartedEventArgs e)
         {
-            var corner = (string)((Thumb)sender).Tag;
-            bool left = corner.Contains("Left");
-            bool top = corner.Contains("Top");
+            var grip = Grip(sender);
 
-            _anchorX = left ? Left + Width : Left;
-            _anchorY = top ? Top + Height : Top;
+            _anchorX = grip.Left ? Left + Width : Left;
+            _anchorY = grip.Top ? Top + Height : Top;
             _resizing = true;
         }
 
         private void OnResizeDelta(object sender, DragDeltaEventArgs e)
         {
-            var corner = (string)((Thumb)sender).Tag;
-            bool left = corner.Contains("Left");
-            bool top = corner.Contains("Top");
+            var (left, top, dragsX, dragsY) = Grip(sender);
 
             // Absolute mouse position in the same coordinate space as Left/Top.
             var local = Mouse.GetPosition(this);
@@ -436,29 +447,25 @@ namespace DiskSpaceMonitor.Views
             double width = left ? _anchorX - mouseX : mouseX - _anchorX;
             double height = top ? _anchorY - mouseY : mouseY - _anchorY;
 
-            // Non-square widget (e.g. either bar graph): resize by the widget's own user dimension and
-            // keep the content aspect, anchoring the opposite corner. Dragging either way still grows
-            // the window — the drag is measured on whichever axis the widget lets the user set.
-            // (Edge snapping stays square-only.)
-            if (IsAspectLocked)
+            // Freely-sized widget (either bar graph): each axis follows its own drag and nothing
+            // couples them, so a side handle stretches in that direction alone and a corner does
+            // both. The content fills whatever comes out. (Edge snapping stays square-only.)
+            if (ResizesFreely)
             {
-                double a = Aspect;
-                double w, h;
-                if (HeightFollowsContent)
+                if (dragsX)
                 {
-                    w = Math.Clamp(Math.Max(width, height * a), MinSize, MaxSize);
-                    h = w / a;
-                }
-                else
-                {
-                    h = Math.Clamp(Math.Max(height, width / a), MinSize, MaxSize);
-                    w = h * a;
+                    double w = Math.Clamp(width, MinSize, MaxWidthLimit);
+                    Left = left ? _anchorX - w : _anchorX;
+                    Width = w;
                 }
 
-                Left = left ? _anchorX - w : _anchorX;
-                Top = top ? _anchorY - h : _anchorY;
-                Width = w;
-                Height = h;
+                if (dragsY)
+                {
+                    double h = Math.Clamp(height, MinSize, MaxHeightLimit);
+                    Top = top ? _anchorY - h : _anchorY;
+                    Height = h;
+                }
+
                 return;
             }
 
@@ -468,7 +475,8 @@ namespace DiskSpaceMonitor.Views
             // Snap edges to other widgets and stop the square growing into them.
             var others = App.Instance.OtherWidgetBounds(this);
             double size = WidgetLayout.SnapAndClampResize(
-                _anchorX, _anchorY, left, top, candidate, others, MinSize, MaxSize);
+                _anchorX, _anchorY, left, top, candidate, others,
+                MinSize, Math.Min(MaxWidthLimit, MaxHeightLimit));
 
             Left = left ? _anchorX - size : _anchorX;
             Top = top ? _anchorY - size : _anchorY;
@@ -526,19 +534,18 @@ namespace DiskSpaceMonitor.Views
 
             _view.Apply(config);
 
+            // Only widgets that size each direction separately get side handles; a square one has
+            // nothing to stretch that way.
+            EdgeHandles.Visibility = _view.ResizesFreely ? Visibility.Visible : Visibility.Collapsed;
+
             // Fade the rendered visual only, NOT the window — otherwise the edit overlay
             // (resize thumbs + buttons) would fade with it and be hard to use.
             WidgetHost.Opacity = Math.Clamp(widgetOpacity, 0.2, 1.0);
             RefreshDisk();
-            FitToAspect();
         }
 
         /// <summary>Force an immediate re-read + re-render (used when the drive set changes).</summary>
-        public void RefreshNow()
-        {
-            RefreshDisk();
-            FitToAspect();
-        }
+        public void RefreshNow() => RefreshDisk();
 
         private TimeSpan RefreshInterval()
             => TimeSpan.FromSeconds(Math.Clamp(_settings.RefreshSeconds, 1, 3600));
@@ -569,57 +576,33 @@ namespace DiskSpaceMonitor.Views
         {
             _config.Left = Left;
             _config.Top = Top;
-            _config.Size = UserDimension;   // the dimension the user set; the other follows the aspect
+
+            // A freely-sized widget owns both dimensions; a square one is described by the one.
+            if (ResizesFreely)
+            {
+                _config.Width = CurrentWidth;
+                _config.Height = CurrentHeight;
+            }
+            else
+            {
+                _config.Size = CurrentHeight;
+            }
+
             App.Instance.SaveSettings();
         }
 
-        private static double Clamp(double size) => Math.Clamp(size, MinSize, MaxSize);
+        private static double Clamp(double size) => Math.Clamp(size, MinSize, FallbackMaxSize);
 
-        // --- Content-aspect sizing -------------------------------------------
+        // --- Size limits -----------------------------------------------------
 
-        /// <summary>The hosted content's width ÷ height (1 = square).</summary>
-        private double Aspect
-        {
-            get
-            {
-                double a = _view?.AspectRatio ?? 1;
-                return a > 0 && !double.IsNaN(a) ? a : 1;
-            }
-        }
+        /// <summary>True when the user sizes this widget's width and height independently and the
+        /// content fills the result (see <see cref="IWidgetView.ResizesFreely"/>).</summary>
+        private bool ResizesFreely => _view?.ResizesFreely ?? false;
 
-        /// <summary>True when the content isn't square, so the window tracks its aspect on resize.</summary>
-        private bool IsAspectLocked => Math.Abs(Aspect - 1) > 0.01;
+        // A widget may be dragged out to fill its monitor. Nothing smaller is a real limit: the
+        // content scales to whatever it is given, so an arbitrary ceiling only ever gets in the way.
+        private double MaxWidthLimit => CurrentScreenWorkArea()?.Width ?? FallbackMaxSize;
 
-        /// <summary>True when the window keeps its width and derives its height (see
-        /// <see cref="IWidgetView.HeightFollowsContent"/>); false to keep the height and derive width.</summary>
-        private bool HeightFollowsContent => _view?.HeightFollowsContent ?? false;
-
-        /// <summary>The dimension the user sets and drags; the other one follows the content aspect.</summary>
-        private double UserDimension => HeightFollowsContent ? CurrentWidth : CurrentHeight;
-
-        /// <summary>
-        /// Size the window's width to the content's aspect (height stays the user-controlled
-        /// dimension), so the frame hugs the widget rather than leaving empty space at the edges.
-        /// A no-op for square widgets (aspect 1 keeps width == height).
-        /// </summary>
-        private void FitToAspect()
-        {
-            double size = UserDimension;
-            if (double.IsNaN(size) || size <= 0)
-                return;
-
-            if (HeightFollowsContent)
-                Height = size / Aspect;
-            else
-                Width = size * Aspect;
-
-            // Pull back on-screen if the new width pushed the window off the work area.
-            if (WorkAreaBounds() is Rect vb)
-            {
-                var (cl, ct) = WidgetLayout.Constrain(Left, Top, CurrentWidth, CurrentHeight, vb);
-                Left = cl;
-                Top = ct;
-            }
-        }
+        private double MaxHeightLimit => CurrentScreenWorkArea()?.Height ?? FallbackMaxSize;
     }
 }

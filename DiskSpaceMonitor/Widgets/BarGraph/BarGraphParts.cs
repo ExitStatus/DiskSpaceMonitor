@@ -13,10 +13,12 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         string UsedLabel, string TotalLabel);
 
     /// <summary>
-    /// How to outline a bar's fill: the chosen style, the outline width, and the colours each style
-    /// draws with (the unused ones are ignored). Grouped so the render call stays readable.
+    /// How to outline a bar's fill: the chosen style, the outline width, the corner rounding, and
+    /// the colours each style draws with (the unused ones are ignored). The gauge scales
+    /// <paramref name="Size"/> and <paramref name="Corner"/> with its text, so an outline keeps its
+    /// weight relative to the graph rather than turning into a hairline on a large widget.
     /// </summary>
-    internal readonly record struct BarSkin(BarStyle Style, double Size, Color Border,
+    internal readonly record struct BarSkin(BarStyle Style, double Size, double Corner, Color Border,
         Color Highlight, Color Lowlight);
 
     /// <summary>
@@ -25,8 +27,11 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
     /// </summary>
     internal static class BarGraphParts
     {
-        /// <summary>Corner rounding applied to a bar's fill and track.</summary>
+        /// <summary>Corner rounding applied to a bar's fill and track, before the gauge's scale.</summary>
         internal const double CornerRadius = 3;
+
+        /// <summary>The bar's rounding at the gauge's current scale, never sharper than a hairline.</summary>
+        internal static double Corner(double scale) => Math.Max(1, CornerRadius * scale);
 
         /// <summary>
         /// The used portion of a bar, outlined per the chosen bar style. Plain is a bare rounded
@@ -38,7 +43,7 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         /// </summary>
         internal static FrameworkElement BuildFill(Color color, BarSkin skin)
         {
-            var corners = new CornerRadius(CornerRadius);
+            var corners = new CornerRadius(skin.Corner);
             var fill = new Border
             {
                 Background = new SolidColorBrush(color),

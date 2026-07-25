@@ -116,13 +116,18 @@ namespace DiskSpaceMonitor.UnitTests.Settings
         }
 
         [Test]
-        public void SaveThenLoad_RoundTripsSingleInstancePlacement()
+        public void SaveThenLoad_RoundTripsEveryMultiDriveStylesPlacement()
         {
             var store = new JsonSettingsStore(_path);
             var original = new WidgetSettings
             {
                 Style = "Concentric",
-                SingleInstance = new DriveWidgetConfig { DrivePath = "", Left = 50, Top = 60, Size = 260 },
+                SingleInstances =
+                {
+                    ["Concentric"] = new DriveWidgetConfig { DrivePath = "", Left = 50, Top = 60, Size = 260 },
+                    // A freely-sized style stores a rectangle instead of the square size.
+                    ["VerticalBar"] = new DriveWidgetConfig { DrivePath = "", Left = 70, Top = 80, Width = 420, Height = 300 },
+                },
                 Drives = { new DriveWidgetConfig { DrivePath = "C:\\", Left = 10, Top = 20, Size = 200 } },
             };
 
@@ -130,10 +135,62 @@ namespace DiskSpaceMonitor.UnitTests.Settings
             var loaded = store.Load();
 
             loaded.Style.Should().Be("Concentric");
-            loaded.SingleInstance.Should().NotBeNull();
-            loaded.SingleInstance!.Left.Should().Be(50);
-            loaded.SingleInstance.Top.Should().Be(60);
-            loaded.SingleInstance.Size.Should().Be(260);
+
+            var concentric = loaded.SingleInstances["Concentric"];
+            concentric.Left.Should().Be(50);
+            concentric.Top.Should().Be(60);
+            concentric.Size.Should().Be(260);
+            concentric.Width.Should().BeNull();
+
+            // The inactive style keeps its own rectangle, so switching back restores that shape.
+            var vertical = loaded.SingleInstances["VerticalBar"];
+            vertical.Left.Should().Be(70);
+            vertical.Width.Should().Be(420);
+            vertical.Height.Should().Be(300);
+        }
+
+        // Width/Height are null until a widget has been freely sized. They must be left out of the
+        // file rather than written as a value, so a square widget's entry stays as terse as it was.
+        [Test]
+        public void Save_UnsizedWidget_OmitsTheRectangle()
+        {
+            new JsonSettingsStore(_path).Save(new WidgetSettings
+            {
+                Drives = { new DriveWidgetConfig { DrivePath = "C:\\", Left = 10, Top = 20, Size = 200 } },
+            });
+
+            File.ReadAllText(_path).Should().NotContain("\"Width\"").And.NotContain("\"Height\"");
+        }
+
+        [Test]
+        public void SingleInstanceFor_UnknownStyle_CreatesAndKeepsOneRecord()
+        {
+            var settings = new WidgetSettings();
+
+            var first = settings.SingleInstanceFor("VerticalBar");
+            first.Left = 42;
+
+            settings.SingleInstanceFor("VerticalBar").Left.Should().Be(42);
+            settings.SingleInstanceFor("HorizontalBar").Should().NotBeSameAs(first);
+        }
+
+        [Test]
+        public void Load_LegacySharedMultiDrivePlacement_MovesToTheActiveStyle()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            File.WriteAllText(_path, """
+                {
+                  "Style": "VerticalBar",
+                  "SingleInstance": { "DrivePath": "", "Left": 50, "Top": 60, "Size": 260 }
+                }
+                """);
+
+            var loaded = new JsonSettingsStore(_path).Load();
+
+            loaded.SingleInstance.Should().BeNull();   // legacy field folded away
+            loaded.SingleInstances.Should().ContainKey("VerticalBar");
+            loaded.SingleInstances["VerticalBar"].Left.Should().Be(50);
+            loaded.SingleInstances["VerticalBar"].Size.Should().Be(260);
         }
 
         [Test]

@@ -18,7 +18,5 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             ("Left to Right", BarOrientation.LeftToRight),
             ("Right to Left", BarOrientation.RightToLeft),
         };
-
-        protected override string BarSizeLabel => "Bar thickness";
     }
 }
