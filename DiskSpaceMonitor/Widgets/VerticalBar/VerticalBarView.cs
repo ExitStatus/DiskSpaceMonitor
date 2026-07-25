@@ -37,6 +37,8 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             Render();
         }
 
+        public void ApplyTypography(WidgetTypography typography) => _gauge.ApplyTypography(typography);
+
         private void Render()
         {
             double low = _config.LowThresholdPercent / 100.0;

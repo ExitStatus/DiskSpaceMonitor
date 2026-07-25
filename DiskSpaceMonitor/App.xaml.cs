@@ -231,7 +231,7 @@ namespace DiskSpaceMonitor
             // Snapshot for cancel-revert. Capture the size now — a preview rebuild may close 'source'.
             string savedWidget = _settings.Style;
             IWidgetConfig savedConfig = factory.ReadConfig(_settings.GetStyleConfig(_settings.Style));
-            double savedOpacity = _settings.WidgetOpacity;
+            GlobalAppearance savedAppearance = _settings.Appearance();
 
             // Size for any drive added while the dialog is open. Per-drive widgets are square, so a
             // freely-sized source (a bar graph stretched wide) contributes its shorter side rather
@@ -245,7 +245,7 @@ namespace DiskSpaceMonitor
             var shown = _settings.Drives.Select(d => d.DrivePath).ToList();
             var dialog = new SettingsWindow(
                 shown, _settings.RefreshSeconds, _autoStart.IsEnabled(),
-                _settings.Style, ConfigFor(_settings.Style), _settings.WidgetOpacity,
+                _settings.Style, ConfigFor(_settings.Style), savedAppearance,
                 _catalog, _registry, PreviewWidget, ConfigFor);
             dialog.ShowDialog();
 
@@ -263,7 +263,11 @@ namespace DiskSpaceMonitor
                 _settings.Style = dialog.SelectedWidget;
                 _settings.SetStyleConfig(dialog.SelectedWidget,
                     _registry.Get(dialog.SelectedWidget).WriteConfig(dialog.SelectedConfig) as JsonObject);
-                _settings.WidgetOpacity = dialog.WidgetOpacity;
+                var chosen = dialog.SelectedAppearance;
+                _settings.WidgetOpacity = chosen.Opacity;
+                _settings.FontFamily = chosen.Typography.FamilyName;
+                _settings.MinFontSize = chosen.Typography.MinSize;
+                _settings.MaxFontSize = chosen.Typography.MaxSize;
 
                 // Match the windows to the chosen widget before reconciling drives — including a
                 // swap between two multi-drive styles, which each have their own saved rectangle.
@@ -283,21 +287,21 @@ namespace DiskSpaceMonitor
                 if (!TopologySuits(savedWidget))
                     RebuildWindows(savedWidget);
                 foreach (var window in _windows)
-                    window.ApplyWidget(savedWidget, savedConfig, savedOpacity);
+                    window.ApplyWidget(savedWidget, savedConfig, savedAppearance);
             }
         }
 
-        /// <summary>Apply an edited widget/config/opacity to the live windows immediately (live
+        /// <summary>Apply an edited widget/config/appearance to the live windows immediately (live
         /// preview). Rebuilds the windows first if they don't suit the previewed widget. Touches no
         /// setting Cancel would need to revert — at most it opens the previewed style's placement
         /// record, which is created on first use anyway and holds nothing the user chose.</summary>
-        private void PreviewWidget(string widgetId, IWidgetConfig config, double widgetOpacity)
+        private void PreviewWidget(string widgetId, IWidgetConfig config, GlobalAppearance global)
         {
             if (!TopologySuits(widgetId))
                 RebuildWindows(widgetId);
 
             foreach (var window in _windows)
-                window.ApplyWidget(widgetId, config, widgetOpacity);
+                window.ApplyWidget(widgetId, config, global);
         }
 
         private void ApplyDriveSelection(IReadOnlyList<string> desired, double newWidgetSize)

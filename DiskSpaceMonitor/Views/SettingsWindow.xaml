@@ -55,6 +55,61 @@
                         <TextBlock x:Name="OpacityValue" Grid.Column="2" Width="44"
                                    TextAlignment="Right" VerticalAlignment="Center"/>
                     </Grid>
+
+                    <Separator Margin="0,14,0,10"/>
+
+                    <TextBlock Text="Text" FontSize="12" Opacity="0.7" Margin="0,0,0,8"/>
+
+                    <!-- The preview is drawn in the chosen font, so the row shows what it will
+                         look like rather than just naming it. -->
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Font" FontSize="13" VerticalAlignment="Center"/>
+                        <Border Grid.Column="1" Margin="0,0,8,0" Padding="8,5" MinHeight="30"
+                                BorderThickness="1" BorderBrush="#40808080" CornerRadius="4">
+                            <TextBlock x:Name="FontPreview" FontSize="15" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                        <Button Grid.Column="2" Content="Choose…" Padding="12,5"
+                                VerticalAlignment="Center" Click="OnChooseFont"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Minimum size" FontSize="13" VerticalAlignment="Center"/>
+                        <Slider x:Name="MinFontSlider" Grid.Column="1"
+                                Minimum="6" Maximum="48" SmallChange="1" LargeChange="4"
+                                TickFrequency="1" IsSnapToTickEnabled="True"
+                                VerticalAlignment="Center" ValueChanged="OnMinFontChanged"/>
+                        <TextBlock x:Name="MinFontValue" Grid.Column="2" Width="44"
+                                   TextAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Maximum size" FontSize="13" VerticalAlignment="Center"/>
+                        <Slider x:Name="MaxFontSlider" Grid.Column="1"
+                                Minimum="8" Maximum="200" SmallChange="1" LargeChange="8"
+                                TickFrequency="1" IsSnapToTickEnabled="True"
+                                VerticalAlignment="Center" ValueChanged="OnMaxFontChanged"/>
+                        <TextBlock x:Name="MaxFontValue" Grid.Column="2" Width="44"
+                                   TextAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <TextBlock Text="Every widget keeps its text within these sizes, whatever size the widget itself is."
+                               Opacity="0.6" FontSize="11" TextWrapping="Wrap" Margin="110,4,0,0"/>
                 </StackPanel>
             </TabItem>
 

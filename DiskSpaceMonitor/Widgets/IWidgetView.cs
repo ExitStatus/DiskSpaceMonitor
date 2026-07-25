@@ -20,6 +20,11 @@ namespace DiskSpaceMonitor.Widgets
         /// <summary>Apply configuration — used both for the initial load and for live preview.</summary>
         void Apply(IWidgetConfig config);
 
+        /// <summary>Apply the app-wide font and text size bounds. Every view honours these, so it is
+        /// required rather than optional: text that ignored them would be the one thing on screen
+        /// not matching the rest. Called before <see cref="Apply"/> on load and on every change.</summary>
+        void ApplyTypography(WidgetTypography typography);
+
         /// <summary>
         /// How the user sizes this widget. False (the default) keeps the window square: one size
         /// drives both dimensions. True lets the user set the width and the height independently —

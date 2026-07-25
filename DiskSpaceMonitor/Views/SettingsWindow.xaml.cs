@@ -12,12 +12,13 @@ namespace DiskSpaceMonitor.Views
     {
         private readonly List<CheckBox> _boxes = new();
         private readonly WidgetRegistry _registry;
-        private readonly Action<string, IWidgetConfig, double> _preview;
+        private readonly Action<string, IWidgetConfig, GlobalAppearance> _preview;
         private readonly Func<string, IWidgetConfig> _configFor;   // a style's saved config (default if none)
         private readonly Dictionary<string, IWidgetConfig> _sessionConfigs = new();  // in-dialog edits per style
         private readonly IReadOnlyList<string> _shownDrives;   // snapshot at open; per-drive editors use it
 
         private string _widgetId;
+        private string _fontFamily;
         private IWidgetConfig _config;
         private IWidgetConfigEditor? _editor;
         private readonly List<TabItem> _widgetTabs = new();   // tabs contributed by the current widget
@@ -43,8 +44,8 @@ namespace DiskSpaceMonitor.Views
         /// <summary>Chosen widget config (valid once Applied).</summary>
         public IWidgetConfig SelectedConfig { get; private set; }
 
-        /// <summary>Chosen overall widget opacity (valid once Applied).</summary>
-        public double WidgetOpacity { get; private set; }
+        /// <summary>Chosen app-wide appearance — opacity and typography (valid once Applied).</summary>
+        public GlobalAppearance SelectedAppearance { get; private set; }
 
         private static readonly (string Label, int Seconds)[] IntervalPresets =
         {
@@ -58,8 +59,8 @@ namespace DiskSpaceMonitor.Views
         };
 
         public SettingsWindow(IReadOnlyList<string> shownPaths, int refreshSeconds, bool autoStart,
-            string widgetId, IWidgetConfig config, double widgetOpacity, IDriveCatalog catalog,
-            WidgetRegistry registry, Action<string, IWidgetConfig, double> preview,
+            string widgetId, IWidgetConfig config, GlobalAppearance appearance, IDriveCatalog catalog,
+            WidgetRegistry registry, Action<string, IWidgetConfig, GlobalAppearance> preview,
             Func<string, IWidgetConfig> configFor)
         {
             InitializeComponent();
@@ -69,9 +70,10 @@ namespace DiskSpaceMonitor.Views
             _shownDrives = shownPaths.ToList();
             _widgetId = widgetId;
             _config = config;
+            _fontFamily = appearance.Typography.FamilyName;
             SelectedWidget = widgetId;
             SelectedConfig = config;
-            WidgetOpacity = widgetOpacity;
+            SelectedAppearance = appearance;
 
             AutoStartCheck.IsChecked = autoStart;
 
@@ -89,7 +91,13 @@ namespace DiskSpaceMonitor.Views
                 WidgetSelector.Items.Add(new ComboBoxItem { Content = factory.DisplayName, Tag = factory.Id });
             SelectComboByTag(WidgetSelector, widgetId);
 
-            OpacitySlider.Value = Math.Clamp(widgetOpacity, OpacitySlider.Minimum, OpacitySlider.Maximum);
+            OpacitySlider.Value = Math.Clamp(appearance.Opacity, OpacitySlider.Minimum, OpacitySlider.Maximum);
+
+            var type = appearance.Typography;
+            MinFontSlider.Value = Math.Clamp(type.MinSize, MinFontSlider.Minimum, MinFontSlider.Maximum);
+            MaxFontSlider.Value = Math.Clamp(type.MaxSize, MaxFontSlider.Minimum, MaxFontSlider.Maximum);
+            UpdateFontPreview();
+            UpdateFontValues();
 
             BuildWidgetTabs();
             UpdateGuards();
@@ -124,6 +132,68 @@ namespace DiskSpaceMonitor.Views
             Preview();
         }
 
+        // --- Typography (global) ---------------------------------------------
+
+        private void OnChooseFont(object sender, RoutedEventArgs e)
+        {
+            string original = _fontFamily;
+            var dialog = new FontPickerDialog(_fontFamily) { Owner = this };
+
+            // Preview each font as it's picked, so the choice is judged on the widget itself.
+            dialog.LivePreview += family =>
+            {
+                _fontFamily = family;
+                UpdateFontPreview();
+                Preview();
+            };
+
+            if (dialog.ShowDialog() == true)
+                _fontFamily = dialog.SelectedFamily;
+            else
+                _fontFamily = original;   // cancelled: put back what it was, preview and all
+
+            UpdateFontPreview();
+            Preview();
+        }
+
+        private void OnMinFontChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // The two bounds can't cross; push the other one along rather than refusing the drag.
+            if (MaxFontSlider != null && e.NewValue > MaxFontSlider.Value)
+                MaxFontSlider.Value = e.NewValue;
+
+            UpdateFontValues();
+            Preview();
+        }
+
+        private void OnMaxFontChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (MinFontSlider != null && e.NewValue < MinFontSlider.Value)
+                MinFontSlider.Value = e.NewValue;
+
+            UpdateFontValues();
+            Preview();
+        }
+
+        private void UpdateFontPreview()
+        {
+            FontPreview.Text = _fontFamily;
+            FontPreview.FontFamily = new System.Windows.Media.FontFamily(_fontFamily);
+        }
+
+        private void UpdateFontValues()
+        {
+            if (MinFontValue != null)
+                MinFontValue.Text = $"{MinFontSlider.Value:0} pt";
+            if (MaxFontValue != null)
+                MaxFontValue.Text = $"{MaxFontSlider.Value:0} pt";
+        }
+
+        /// <summary>The app-wide appearance as the dialog currently has it.</summary>
+        private GlobalAppearance CurrentAppearance() => new(
+            OpacitySlider.Value,
+            new WidgetTypography(_fontFamily, MinFontSlider.Value, MaxFontSlider.Value));
+
         private void BuildWidgetTabs()
         {
             foreach (var tab in _widgetTabs)
@@ -151,7 +221,7 @@ namespace DiskSpaceMonitor.Views
         private void Preview()
         {
             if (_ready)
-                _preview(_widgetId, _config, OpacitySlider.Value);
+                _preview(_widgetId, _config, CurrentAppearance());
         }
 
         private static void SelectComboByTag(ComboBox combo, string tag)
@@ -228,7 +298,7 @@ namespace DiskSpaceMonitor.Views
 
             SelectedWidget = _widgetId;
             SelectedConfig = _editor != null ? _editor.CurrentConfig() : _config;
-            WidgetOpacity = OpacitySlider.Value;
+            SelectedAppearance = CurrentAppearance();
 
             Applied = true;
             Close();

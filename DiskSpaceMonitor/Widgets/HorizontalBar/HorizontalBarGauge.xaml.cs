@@ -60,6 +60,9 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
         private RenderArgs? _last;
         private double _scale = 1;
 
+        // App-wide font and size bounds. Defaults until the host pushes the user's choice.
+        private WidgetTypography _type = WidgetTypography.Default;
+
         /// <summary>Everything <see cref="Render"/> was given, kept so a resize can replay it.</summary>
         private readonly record struct RenderArgs(IReadOnlyList<Bar> Bars, Color Track, double TrackOpacity,
             Color Text, double Gap, BarOrientation Orientation, BarSkin Skin, Effect? Glow);
@@ -81,6 +84,15 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
         /// only grows when the graph has grown in both directions.</summary>
         private double CurrentScale => Math.Clamp(
             Math.Min(ActualWidth / RefWidth, ActualHeight / RefHeight), MinScale, MaxScale);
+
+        /// <summary>Apply the app-wide font and text size bounds. The family goes on the control, so
+        /// every piece of text below inherits it; the bounds are applied as each one is sized.</summary>
+        internal void ApplyTypography(WidgetTypography typography)
+        {
+            _type = typography;
+            FontFamily = typography.Family;
+            Build();
+        }
 
         internal void Render(IReadOnlyList<Bar> bars, Color track, double trackOpacity, Color text,
             double gap, BarOrientation orientation, BarSkin skin, Effect? glow)
@@ -111,7 +123,7 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             if (bars.Count == 0)
                 return;
 
-            double axisFont = BarGraphParts.Font(AxisFont, _scale);
+            double axisFont = BarGraphParts.Font(AxisFont, _scale, _type);
             double axisGap = AxisGap * _scale;
 
             // Both annotation columns are Auto; which one holds the totals and which holds the drive
@@ -150,7 +162,7 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             // rotated text would need even more of the same scarce dimension. It stops shrinking at
             // the readable floor and crowds its slot instead of vanishing.
             double captionFont = Math.Clamp(slot / LineHeightFactor,
-                BarGraphParts.MinFont, BarGraphParts.Font(CaptionBaseFont, _scale));
+                _type.MinSize, BarGraphParts.Font(CaptionBaseFont, _scale, _type));
 
             // Value axis (0 / 50 / 100) under the plot, aligned to the plot's edges.
             var axis = BuildValueAxis(args.Text, axisFont);
@@ -340,12 +352,12 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
                     HorizontalAlignment = _rightToLeft ? HorizontalAlignment.Left : HorizontalAlignment.Right,
                     VerticalAlignment = VerticalAlignment.Center,
                     Foreground = new SolidColorBrush(text),
-                    FontSize = BarGraphParts.Font(LetterFont, _scale),
+                    FontSize = BarGraphParts.Font(LetterFont, _scale, _type),
                 };
                 tb.Inlines.Add(new Run(bar.Letter) { FontWeight = FontWeights.SemiBold });
                 tb.Inlines.Add(new Run($" {Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%")
                 {
-                    FontSize = BarGraphParts.Font(AxisFont, _scale),
+                    FontSize = BarGraphParts.Font(AxisFont, _scale, _type),
                 });
                 return tb;
             }, _glow);

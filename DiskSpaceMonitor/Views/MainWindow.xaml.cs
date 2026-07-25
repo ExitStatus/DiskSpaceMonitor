@@ -510,18 +510,20 @@ namespace DiskSpaceMonitor.Views
             ApplyWidget();
         }
 
-        /// <summary>Apply the current global widget + config + opacity from settings.</summary>
+        /// <summary>Apply the current global widget + config + app-wide appearance from settings.</summary>
         private void ApplyWidget()
         {
             var factory = _registry.Get(_settings.Style);
-            ApplyWidget(_settings.Style, factory.ReadConfig(_settings.GetStyleConfig(_settings.Style)), _settings.WidgetOpacity);
+            ApplyWidget(_settings.Style, factory.ReadConfig(_settings.GetStyleConfig(_settings.Style)),
+                _settings.Appearance());
         }
 
         /// <summary>
-        /// Apply a widget + its config + overall opacity — for the initial load, live preview from
-        /// the dialog, and applying saved changes. Rebuilds the hosted view when the widget changes.
+        /// Apply a widget + its config + the app-wide appearance — for the initial load, live preview
+        /// from the dialog, and applying saved changes. Rebuilds the hosted view when the widget
+        /// changes.
         /// </summary>
-        public void ApplyWidget(string widgetId, IWidgetConfig config, double widgetOpacity)
+        public void ApplyWidget(string widgetId, IWidgetConfig config, GlobalAppearance global)
         {
             _viewInitialized = true;
 
@@ -532,6 +534,8 @@ namespace DiskSpaceMonitor.Views
                 WidgetHost.Content = _view.View;
             }
 
+            // Typography first: the view sizes its text against these bounds while it renders.
+            _view.ApplyTypography(global.Typography);
             _view.Apply(config);
 
             // Only widgets that size each direction separately get side handles; a square one has
@@ -540,7 +544,7 @@ namespace DiskSpaceMonitor.Views
 
             // Fade the rendered visual only, NOT the window — otherwise the edit overlay
             // (resize thumbs + buttons) would fade with it and be hard to use.
-            WidgetHost.Opacity = Math.Clamp(widgetOpacity, 0.2, 1.0);
+            WidgetHost.Opacity = Math.Clamp(global.Opacity, 0.2, 1.0);
             RefreshDisk();
         }
 

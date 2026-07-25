@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json.Nodes;
 using DiskSpaceMonitor.Settings;
+using DiskSpaceMonitor.Widgets;
 using FluentAssertions;
 
 namespace DiskSpaceMonitor.UnitTests.Settings
@@ -191,6 +192,39 @@ namespace DiskSpaceMonitor.UnitTests.Settings
             loaded.SingleInstances.Should().ContainKey("VerticalBar");
             loaded.SingleInstances["VerticalBar"].Left.Should().Be(50);
             loaded.SingleInstances["VerticalBar"].Size.Should().Be(260);
+        }
+
+        [Test]
+        public void SaveThenLoad_RoundTripsTheAppWideTypography()
+        {
+            var store = new JsonSettingsStore(_path);
+
+            store.Save(new WidgetSettings { FontFamily = "Cascadia Mono", MinFontSize = 11, MaxFontSize = 40 });
+            var loaded = store.Load();
+
+            loaded.FontFamily.Should().Be("Cascadia Mono");
+            loaded.MinFontSize.Should().Be(11);
+            loaded.MaxFontSize.Should().Be(40);
+
+            var type = loaded.Appearance().Typography;
+            type.FamilyName.Should().Be("Cascadia Mono");
+            type.MinSize.Should().Be(11);
+            type.MaxSize.Should().Be(40);
+        }
+
+        // A file written before the font settings existed simply has none of them; the widgets must
+        // still get a usable font and a sane range rather than a null family and a zero ceiling.
+        [Test]
+        public void Load_FileWithoutTypography_UsesTheDefaults()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            File.WriteAllText(_path, """{ "Style": "Circular", "RefreshSeconds": 5 }""");
+
+            var type = new JsonSettingsStore(_path).Load().Appearance().Typography;
+
+            type.FamilyName.Should().Be(WidgetTypography.DefaultFamily);
+            type.MinSize.Should().Be(WidgetTypography.DefaultMinSize);
+            type.MaxSize.Should().Be(WidgetTypography.DefaultMaxSize);
         }
 
         [Test]

@@ -24,14 +24,95 @@ namespace DiskSpaceMonitor.Widgets.Concentric
         private const double Gap = 5;          // space between rings
         private const double Pad = 2;          // hairline so nothing touches the very edge
         private const double MinSep = 2;       // minimum gap between label chips
+        private const double ChipFont = 11;    // label chip text, on the design surface
+
+        // App-wide font and size bounds. Defaults until the host pushes the user's choice.
+        private WidgetTypography _type = WidgetTypography.Default;
+
+        // The last render's inputs and the Viewbox scale they were drawn at, so a resize can redraw
+        // the chips at a size that still honours the bounds. Null until the first render.
+        private RenderArgs? _last;
+        private double _scale = 1;
+        private bool _rendering;
+
+        /// <summary>Everything <see cref="Render"/> was given, kept so a resize can replay it.</summary>
+        private readonly record struct RenderArgs(IReadOnlyList<Ring> Rings, double Thickness,
+            Color TextColor, double TrackOpacity);
 
         public ConcentricGauge()
         {
             InitializeComponent();
+
+            // Only the chip text depends on the window size — the rings scale on their own — so a
+            // resize only needs a redraw when the scale has actually moved.
+            SizeChanged += (_, _) =>
+            {
+                if (_last is not null && Math.Abs(CurrentScale - _scale) > 0.005)
+                    Render(_last.Value);
+            };
+        }
+
+        /// <summary>
+        /// The Uniform Viewbox's scale: the window over the canvas, on whichever axis binds. The
+        /// canvas is sized per render to hug its content, so this only means anything once a render
+        /// has happened.
+        /// </summary>
+        private double CurrentScale
+        {
+            get
+            {
+                if (Surface.Width <= 0 || Surface.Height <= 0 || ActualWidth <= 0 || ActualHeight <= 0)
+                    return 1;
+                return Math.Min(ActualWidth / Surface.Width, ActualHeight / Surface.Height);
+            }
+        }
+
+        /// <summary>Apply the app-wide font and text size bounds. The family goes on the control so
+        /// the chips inherit it; the bounds are applied against the current Viewbox scale.</summary>
+        internal void ApplyTypography(WidgetTypography typography)
+        {
+            _type = typography;
+            FontFamily = typography.Family;
+
+            if (_last is not null)
+                Render(_last.Value);
         }
 
         internal void Render(IReadOnlyList<Ring> rings, double thickness, Color textColor, double trackOpacity)
+            => Render(new RenderArgs(rings, thickness, textColor, trackOpacity));
+
+        private void Render(RenderArgs args)
         {
+            // Chip size feeds the canvas bounds, which feed the Viewbox scale, which feeds the chip
+            // font — so a draw can invalidate the scale it was drawn at. Nothing external tells us
+            // (the control's own size hasn't changed, only the canvas inside it), so settle it here.
+            // Each pass moves the scale less than the last, since shrinking chips can only pull the
+            // canvas in as far as the rings themselves, so it converges in one or two.
+            if (_rendering)
+                return;
+
+            _rendering = true;
+            try
+            {
+                for (int pass = 0; pass < 4; pass++)
+                {
+                    Draw(args);
+                    if (Math.Abs(CurrentScale - _scale) <= 0.005)
+                        return;
+                }
+            }
+            finally
+            {
+                _rendering = false;
+            }
+        }
+
+        private void Draw(RenderArgs args)
+        {
+            var (rings, thickness, textColor, trackOpacity) = args;
+            _last = args;
+            _scale = CurrentScale;
+
             Surface.Children.Clear();
 
             if (rings.Count == 0)
@@ -61,7 +142,8 @@ namespace DiskSpaceMonitor.Widgets.Concentric
                 angle[i] = frac * 2 * Math.PI;
                 rad[i] = Radius(i) + outward;
 
-                chip[i] = BuildChip(rings[i].Label, rings[i].ChipColor, textColor);
+                chip[i] = BuildChip(rings[i].Label, rings[i].ChipColor, textColor,
+                    _type.DesignFont(ChipFont, _scale));
                 chip[i].Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 size[i] = chip[i].DesiredSize;
             }
@@ -175,7 +257,7 @@ namespace DiskSpaceMonitor.Widgets.Concentric
             }
         }
 
-        private static Border BuildChip(string label, Color chipColor, Color textColor) => new()
+        private static Border BuildChip(string label, Color chipColor, Color textColor, double fontSize) => new()
         {
             Background = new SolidColorBrush(chipColor),
             CornerRadius = new CornerRadius(6),
@@ -184,7 +266,7 @@ namespace DiskSpaceMonitor.Widgets.Concentric
             {
                 Text = label,
                 Foreground = new SolidColorBrush(textColor),
-                FontSize = 11,
+                FontSize = fontSize,
                 FontWeight = FontWeights.SemiBold
             }
         };

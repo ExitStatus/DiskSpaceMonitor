@@ -55,10 +55,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   thicken; the vertical graph does the same the other way round. Text size follows
   the *smaller* of the two directions, so a one-way stretch resizes the bars and
   leaves the labels alone — only a graph that has grown in both directions gets
-  bigger text — and it never renders below 8pt, so a graph squeezed along one axis
-  stops shrinking its labels once they reach the smallest size that still reads.
+  bigger text — and it stops at the minimum size, so a graph squeezed along one axis
+  holds its labels at something readable rather than shrinking them away.
   Every multi-drive style keeps its own window rectangle, so switching between the
   concentric, vertical and horizontal styles restores the shape each was last given.
+- **App-wide font and text size bounds** – the *General* tab gains a **Font** row
+  showing the chosen font drawn in itself, with a **Choose…** button opening a
+  chooser that lists every installed family (each drawn in its own face), filters as
+  you type, and previews a sample; and **Minimum size** / **Maximum size** sliders
+  that bound what every widget renders text at. All three apply to all four styles,
+  so text doesn't change when you switch, and they preview live as you pick — Cancel
+  puts them back. The bounds are on the *rendered* size, so they hold whatever size
+  the widget is: a gauge dragged across the screen stops its labels growing at the
+  maximum instead of turning them into a poster, and a small one holds them at the
+  minimum instead of shrinking them away.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as

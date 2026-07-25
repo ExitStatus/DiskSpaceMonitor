@@ -54,13 +54,19 @@ drive's status):
   stretch it downwards and they thicken. There is no size cap beyond the monitor
   itself. The labels only change size when the graph grows in *both* directions, so
   a one-way stretch resizes the bars and leaves the text where it was — and they
-  never shrink past 8pt, so a short graph stays readable.
+  stop at the minimum text size, so a short graph stays readable.
 - **Pluggable widget styles** – new styles plug in by implementing a single
   interface, with their own settings tabs, in their own `Widgets/<Name>/` folder.
   Each style remembers its own configuration independently.
 - **Multiple drives** – managed from the settings dialog (at least one is always
   shown): the Circular style shows one gauge per drive; Concentric and both bar
   graphs show them all in one window.
+- **One font for every widget** – the *General* tab picks the font all four styles
+  draw with, previewed in the font itself, chosen from a dialog listing every
+  installed family (each shown in its own face, with a filter box and a sample).
+  **Minimum** and **maximum** text sizes bound what every widget renders, whatever
+  size the widget itself is — so a gauge stretched across the screen doesn't turn
+  its labels into a poster, and a small one keeps them readable.
 - **Colour picker** – every colour is edited from a row with a live swatch and an
   editable `#RRGGBB` box (copy/paste), plus a pipette button that opens a
   hue/saturation/brightness chooser with gradient sliders and a live preview.
@@ -83,9 +89,9 @@ drive's status):
   the UI only while Ctrl is held (no continuous polling). The working set is
   trimmed while idle to keep the memory footprint small.
 - **Remembers** every setting: each widget's position and size, the refresh
-  interval, thresholds, and all appearance choices — and each style keeps its own
-  configuration *and its own window rectangle*, so switching styles (or restarting)
-  never loses it.
+  interval, thresholds, the font and text size bounds, and all appearance choices —
+  and each style keeps its own configuration *and its own window rectangle*, so
+  switching styles (or restarting) never loses it.
 
 ## Controls
 
@@ -168,7 +174,10 @@ Both are framework-dependent, so they need the .NET 10 Desktop Runtime installed
 The settings dialog (⚙ button or right-click → Settings…) is tabbed:
 
 - **General** – auto-start at login, refresh interval, the **Widget** style
-  dropdown, and overall widget opacity.
+  dropdown, overall widget opacity, and the app-wide **text** settings: the
+  **font** (with a preview and a **Choose…** dialog listing every installed
+  family) and the **minimum** and **maximum** sizes every widget holds its text
+  within. These apply to all four styles, so text doesn't change when you switch.
 - **Drives** – which drives to show (at least one is always kept).
 - The selected widget then contributes its own tabs:
   - **Circular gauge** – *Appearance* (background opacity, ring thickness, and the

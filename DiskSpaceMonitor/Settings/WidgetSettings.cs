@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using DiskSpaceMonitor.Widgets;
 
 namespace DiskSpaceMonitor.Settings
 {
@@ -19,6 +20,20 @@ namespace DiskSpaceMonitor.Settings
 
         /// <summary>Overall opacity of the rendered widget (0.2–1). Shared by every instance.</summary>
         public double WidgetOpacity { get; set; } = 1.0;
+
+        /// <summary>Font family every widget's text is drawn in.</summary>
+        public string FontFamily { get; set; } = WidgetTypography.DefaultFamily;
+
+        /// <summary>Smallest size any widget will render text at.</summary>
+        public double MinFontSize { get; set; } = WidgetTypography.DefaultMinSize;
+
+        /// <summary>Largest size any widget will render text at.</summary>
+        public double MaxFontSize { get; set; } = WidgetTypography.DefaultMaxSize;
+
+        /// <summary>The app-wide appearance as the widgets want it, with the stored values
+        /// validated (an unset font name or crossed size bounds fall back to something sane).</summary>
+        public GlobalAppearance Appearance()
+            => new(WidgetOpacity, new WidgetTypography(FontFamily, MinFontSize, MaxFontSize));
 
         /// <summary>Opaque configuration blob per widget style, keyed by widget id. Every style
         /// keeps its own configuration, so switching styles or restarting never loses it.</summary>

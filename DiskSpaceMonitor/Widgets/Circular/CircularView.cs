@@ -41,5 +41,7 @@ namespace DiskSpaceMonitor.Widgets.Circular
             // Thresholds last: they recompute the fill level off the latest reading.
             _gauge.SetThresholds(c.LowThresholdPercent, c.CriticalThresholdPercent);
         }
+
+        public void ApplyTypography(WidgetTypography typography) => _gauge.ApplyTypography(typography);
     }
 }
