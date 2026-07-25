@@ -59,17 +59,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stops shrinking its labels once they reach the smallest size that still reads.
   Every multi-drive style keeps its own window rectangle, so switching between the
   concentric, vertical and horizontal styles restores the shape each was last given.
-  Existing settings files are migrated on first load.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as
   you drag; **Cancel** reverts. Replaces the inline R/G/B sliders.
 - **Per-style settings** – every widget style keeps its own configuration, so
   switching styles or restarting no longer resets another style's settings.
-- **Text outer glow** – the circular gauge and vertical bar graph each gain an
+- **Text outer glow** – the circular gauge and both bar graphs each gain an
   **Effects** tab with an **Outer glow** radius (0–10) and an **Outer glow colour**,
   adding an alpha-blended halo around the widget's text (the gauge's centre stats;
-  the bar graph's labels, captions and axis ticks). The glow renders as stacked blurred
+  a bar graph's labels, captions and axis ticks). The glow renders as stacked blurred
   copies strictly *behind* the text, so the glyphs stay sharp. It's a reusable
   component (`Widgets/Effects/`), ready for future widgets to adopt.
 
@@ -90,25 +89,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The 600px ceiling on how large a widget could be dragged, and the 120px floor
   under each dimension. A widget may now be sized anywhere from 60px up to filling
   its monitor.
-
-### Fixed
-
-- Toggling **Show used space** on the vertical bar graph no longer changes the size
-  of the chart. Switching it on reserved a fixed band of headroom past the 100% line,
-  which came straight out of the fixed-height plot and shrank the bars (by ~9.5% with
-  **Show total space** off). The captions are clipped to their own bar column and
-  could never reach that band, so it only cost plot height and has been removed.
-- The vertical bar graph window no longer drifts left on restart. Its saved position was
-  being constrained against the intermediate square size before the window was
-  fitted to the bars, shoving a window near a screen's right edge sideways.
-- The horizontal bar graph no longer floats in a band of dead space. Its height was
-  derived from its width and its content's aspect, but a 120px minimum was then
-  applied to *both* dimensions, so below about 430px wide the window was left taller
-  than the chart and the chart was letterboxed inside it.
-- Neither bar graph resizes itself behind your back any more. The window used to be
-  fitted to the measured content, so changing the bar size, the caption toggles or
-  the drive set moved the frame the user had placed. The chart now reflows inside the
-  window instead.
 
 ## [1.0.0] - 2026-07-21
 
