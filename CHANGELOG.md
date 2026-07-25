@@ -27,12 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **Orientation** dropdown flips the axis between **Bottom Up** (0% at the bottom,
   bars growing upwards — the default) and **Top Down** (0% at the top, bars hanging
   downwards); the y-axis, the fill direction and the used-space captions all follow.
-  The bar width, the unused-space transparency, the track/status colours, and the
-  thresholds are configurable, and optional **Show used space** / **Show total
+  The gap between bars, the unused-space transparency, the track/status colours, and
+  the thresholds are configurable, and optional **Show used space** / **Show total
   space** captions display the humanized used amount on each bar and the total
-  above it. The whole chart (bars and labels) scales with the window, and the
-  window resizes to hug the bars — the bars and the gaps between them shrink
-  together as the bar width is reduced, rather than leaving space at the edges.
+  above it. The bars fill the window in both directions (see *Free sizing* below).
   The used/total captions auto-size to one shared size that fits the bar and
   rotate 90° when a bar is too narrow for horizontal text. A **Bar style** on the
   Effects tab outlines the fill: **Plain**, **Border** (an even outline of a chosen
@@ -44,28 +42,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stacked down the window, the drive label and its used % at the 0% end, and the
   total space at the 100% end. An **Orientation** dropdown picks **Left to Right**
   (0% at the left — the default) or **Right to Left**, mirroring the axis, the fill
-  direction, the labels and the totals. It offers the same bar thickness,
-  unused-space transparency, colours, thresholds, caption toggles, bar styles and
-  text glow as the vertical graph, and keeps its own copy of them all. Captions
-  scale to the bar's slot instead of rotating, since a horizontal bar has the whole
-  axis to write along. The gap between bars is fixed, so reducing the thickness
-  closes the graph up and the window shortens to fit rather than spreading the bars
-  out: this is the first widget sized by its **width**, with its height following its
-  content. Both graphs now share their configuration, settings editor and fill
-  rendering (`Widgets/BarGraph/`), so an option added to one arrives in the other.
-- **Free sizing for both bar graphs** – a bar graph is no longer a fixed shape you
-  scale. It gains a resize handle at the **centre of each side** as well as at each
-  corner, its width and height are set independently, and the chart fills whatever
-  rectangle you drag: stretch a horizontal graph sideways and its bars lengthen,
-  stretch it downwards and they thicken; the vertical graph does the same the other
-  way round. Text size follows the *smaller* of the two directions, so a one-way
-  stretch resizes the bars and leaves the labels alone — only a graph that has grown
-  in both directions gets bigger text. Text never renders below 8pt, so squeezing a
-  graph along one axis stops shrinking its labels once they reach the smallest size
-  that still reads. Each multi-drive style now remembers its own
-  window rectangle, so switching between the concentric, vertical and horizontal
-  styles restores the shape each was last given instead of reinterpreting one shared
-  number. Existing settings files are migrated on first load.
+  direction, the labels and the totals. It offers the same bar gap, unused-space
+  transparency, colours, thresholds, caption toggles, bar styles and text glow as the
+  vertical graph, and keeps its own copy of them all. Captions scale to the bar's slot
+  instead of rotating, since a horizontal bar has the whole axis to write along. Both
+  graphs share their configuration, settings editor and fill rendering
+  (`Widgets/BarGraph/`), so an option added to one arrives in the other.
+- **Free sizing for both bar graphs** – a bar graph's width and height are dragged
+  independently, from a resize handle at the **centre of each side** as well as at
+  each corner, and the chart fills whatever rectangle you give it: stretch a
+  horizontal graph sideways and its bars lengthen, stretch it downwards and they
+  thicken; the vertical graph does the same the other way round. Text size follows
+  the *smaller* of the two directions, so a one-way stretch resizes the bars and
+  leaves the labels alone — only a graph that has grown in both directions gets
+  bigger text — and it never renders below 8pt, so a graph squeezed along one axis
+  stops shrinking its labels once they reach the smallest size that still reads.
+  Every multi-drive style keeps its own window rectangle, so switching between the
+  concentric, vertical and horizontal styles restores the shape each was last given.
+  Existing settings files are migrated on first load.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as
@@ -90,17 +84,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Appearance is now stored under a per-widget config block in `settings.json`;
   pre-1.1 settings files are migrated automatically on first load, preserving the
   existing look.
-- The bar graphs' **Bar width** / **Bar thickness** setting is replaced by **Gap
-  between bars** (0–50% of each bar's slot). The bars themselves are sized by the
-  window now — they always fill it — so the only thing left to choose is how much
-  of the space between them is gap.
 
 ### Removed
 
 - The 600px ceiling on how large a widget could be dragged, and the 120px floor
   under each dimension. A widget may now be sized anywhere from 60px up to filling
-  its monitor. The ceiling capped the vertical bar graph's on-screen scale at 3×,
-  which is what made it feel like the graph had a maximum size.
+  its monitor.
 
 ### Fixed
 

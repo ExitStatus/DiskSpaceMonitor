@@ -9,9 +9,9 @@ window drawing every drive as a nested ring), or a **Vertical bar graph** or
 
 ![Disk Space Monitor running on the desktop](Docs/main.png)
 
-The same drives shown in the other two styles — a vertical bar graph (with the used
-and total space per drive) and concentric rings (each chip coloured by that drive's
-status):
+The same drives shown in two of the other styles — a vertical bar graph (with the
+used and total space per drive) and concentric rings (each chip coloured by that
+drive's status):
 
 | Vertical bar graph | Concentric circles |
 |:------------------:|:------------------:|
@@ -89,13 +89,13 @@ status):
 
 ## Controls
 
-| Action    | How                                                            |
-|-----------|----------------------------------------------------------------|
-| Move      | Hold **Ctrl**, click-drag anywhere on the widget               |
+| Action    | How                                                                  |
+|-----------|----------------------------------------------------------------------|
+| Move      | Hold **Ctrl**, click-drag anywhere on the widget                     |
 | Resize    | Hold **Ctrl**, hover, drag a corner handle — or, on either bar graph, a side handle to stretch that way alone |
-| Settings  | Hold **Ctrl**, click the ⚙ button, or right-click → Settings…  |
-| Hide one  | Right-click → **Hide this drive** (Circular style only)        |
-| Quit      | Settings → **Exit Application**, or right-click → Exit application |
+| Settings  | Hold **Ctrl**, click the ⚙ button, or right-click → Settings…        |
+| Hide one  | Right-click → **Hide this drive** (Circular style only)              |
+| Quit      | Settings → **Exit Application**, or right-click → Exit application   |
 
 ## Project structure
 
