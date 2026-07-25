@@ -33,7 +33,6 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
         private const double AxisGap = 4;              // space between the plot and the value axis
         private const double LetterFont = 11;          // the drive letter
         private const double CaptionBaseFont = 10;     // default size for the used/total captions
-        private const double CaptionMinFont = 6;       // never shrink a caption below this
         private const double LineHeightFactor = 1.4;   // text line height as a multiple of the font size
 
         // Smallest and largest text scale, so a widget squeezed to the minimum still reads and a
@@ -112,7 +111,7 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             if (bars.Count == 0)
                 return;
 
-            double axisFont = AxisFont * _scale;
+            double axisFont = BarGraphParts.Font(AxisFont, _scale);
             double axisGap = AxisGap * _scale;
 
             // Both annotation columns are Auto; which one holds the totals and which holds the drive
@@ -148,9 +147,10 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             // bar has the whole axis to write along, so the limit is how much room it has vertically.
             // That is the whole slot, not just the bar: a caption sits beside its bar, so it may use
             // the gap around it and only shrinks once the slot itself gets tight. Never rotate —
-            // rotated text would need even more of the same scarce dimension.
+            // rotated text would need even more of the same scarce dimension. It stops shrinking at
+            // the readable floor and crowds its slot instead of vanishing.
             double captionFont = Math.Clamp(slot / LineHeightFactor,
-                Math.Min(CaptionMinFont * _scale, CaptionBaseFont * _scale), CaptionBaseFont * _scale);
+                BarGraphParts.MinFont, BarGraphParts.Font(CaptionBaseFont, _scale));
 
             // Value axis (0 / 50 / 100) under the plot, aligned to the plot's edges.
             var axis = BuildValueAxis(args.Text, axisFont);
@@ -340,10 +340,13 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
                     HorizontalAlignment = _rightToLeft ? HorizontalAlignment.Left : HorizontalAlignment.Right,
                     VerticalAlignment = VerticalAlignment.Center,
                     Foreground = new SolidColorBrush(text),
-                    FontSize = LetterFont * _scale,
+                    FontSize = BarGraphParts.Font(LetterFont, _scale),
                 };
                 tb.Inlines.Add(new Run(bar.Letter) { FontWeight = FontWeights.SemiBold });
-                tb.Inlines.Add(new Run($" {Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%") { FontSize = AxisFont * _scale });
+                tb.Inlines.Add(new Run($" {Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%")
+                {
+                    FontSize = BarGraphParts.Font(AxisFont, _scale),
+                });
                 return tb;
             }, _glow);
     }

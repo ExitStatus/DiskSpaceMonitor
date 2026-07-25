@@ -53,7 +53,8 @@ status):
   rectangle you drag: stretch a horizontal graph sideways and its bars lengthen,
   stretch it downwards and they thicken. There is no size cap beyond the monitor
   itself. The labels only change size when the graph grows in *both* directions, so
-  a one-way stretch resizes the bars and leaves the text where it was.
+  a one-way stretch resizes the bars and leaves the text where it was — and they
+  never shrink past 8pt, so a short graph stays readable.
 - **Pluggable widget styles** – new styles plug in by implementing a single
   interface, with their own settings tabs, in their own `Widgets/<Name>/` folder.
   Each style remembers its own configuration independently.

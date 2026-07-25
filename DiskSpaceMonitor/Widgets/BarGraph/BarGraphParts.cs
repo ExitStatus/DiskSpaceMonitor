@@ -30,8 +30,16 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         /// <summary>Corner rounding applied to a bar's fill and track, before the gauge's scale.</summary>
         internal const double CornerRadius = 3;
 
+        /// <summary>Smallest font either graph will draw. A graph squeezed along one axis scales its
+        /// text down with it, and below about this size the labels stop being readable at all —
+        /// better to let text crowd its bar than to render something nobody can make out.</summary>
+        internal const double MinFont = 8;
+
         /// <summary>The bar's rounding at the gauge's current scale, never sharper than a hairline.</summary>
         internal static double Corner(double scale) => Math.Max(1, CornerRadius * scale);
+
+        /// <summary>A font size at the gauge's current scale, never below <see cref="MinFont"/>.</summary>
+        internal static double Font(double baseSize, double scale) => Math.Max(MinFont, baseSize * scale);
 
         /// <summary>
         /// The used portion of a bar, outlined per the chosen bar style. Plain is a bare rounded

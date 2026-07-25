@@ -60,7 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stretch it downwards and they thicken; the vertical graph does the same the other
   way round. Text size follows the *smaller* of the two directions, so a one-way
   stretch resizes the bars and leaves the labels alone — only a graph that has grown
-  in both directions gets bigger text. Each multi-drive style now remembers its own
+  in both directions gets bigger text. Text never renders below 8pt, so squeezing a
+  graph along one axis stops shrinking its labels once they reach the smallest size
+  that still reads. Each multi-drive style now remembers its own
   window rectangle, so switching between the concentric, vertical and horizontal
   styles restores the shape each was last given instead of reinterpreting one shared
   number. Existing settings files are migrated on first load.

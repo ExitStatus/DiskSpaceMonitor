@@ -33,7 +33,6 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
         private const double AxisGap = 6;              // space between the y-axis and the plot
         private const double LetterFont = 11;          // the drive letter
         private const double CaptionBaseFont = 10;     // default size for the used/total captions
-        private const double CaptionMinFont = 6;       // shrink down to here before rotating
         private const double CaptionRotatedFont = 8;   // size used once rotated
 
         // Smallest and largest text scale, so a widget squeezed to the minimum still reads and a
@@ -108,7 +107,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             if (bars.Count == 0)
                 return;
 
-            double axisFont = AxisFont * _scale;
+            double axisFont = BarGraphParts.Font(AxisFont, _scale);
             double edgePad = EdgePad * _scale;
             double axisGap = AxisGap * _scale;
 
@@ -144,8 +143,9 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             double barThickness = plotWidth * (1 - gap) / n;
 
             // One uniform font size for the used/total captions so they fit within the bar width. If
-            // that would drop below the minimum, keep the minimum and rotate the text 90° CCW instead,
-            // so a narrow bar still fits it. Every caption uses the one size.
+            // fitting the width would take it below the readable floor, rotate the text 90° CCW
+            // instead — reading up the bar, it has the bar's whole length to use rather than its
+            // width. Every caption uses the one size.
             var captionTexts = new List<string>();
             foreach (var b in bars)
             {
@@ -153,7 +153,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                 if (!string.IsNullOrEmpty(b.TotalLabel)) captionTexts.Add(b.TotalLabel);
             }
 
-            double baseFont = CaptionBaseFont * _scale;
+            double baseFont = BarGraphParts.Font(CaptionBaseFont, _scale);
             double captionFont = baseFont;
             bool rotateCaptions = false;
             if (captionTexts.Count > 0)
@@ -161,8 +161,8 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                 double maxWidth = captionTexts.Max(c => BarGraphParts.Measure(c, baseFont).Width);
                 double fitFont = maxWidth > 0 ? baseFont * barThickness / maxWidth : baseFont;
                 fitFont = Math.Min(baseFont, fitFont);
-                rotateCaptions = fitFont < CaptionMinFont * _scale;
-                captionFont = rotateCaptions ? CaptionRotatedFont * _scale : fitFont;
+                rotateCaptions = fitFont < BarGraphParts.MinFont;
+                captionFont = rotateCaptions ? BarGraphParts.Font(CaptionRotatedFont, _scale) : fitFont;
             }
 
             // Total-space header, hugging the 100% end of the plot, aligned with each bar.
@@ -342,11 +342,14 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                     TextAlignment = TextAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Foreground = new SolidColorBrush(text),
-                    FontSize = LetterFont * _scale,
+                    FontSize = BarGraphParts.Font(LetterFont, _scale),
                 };
                 tb.Inlines.Add(new Run(bar.Letter) { FontWeight = FontWeights.SemiBold });
                 tb.Inlines.Add(new LineBreak());
-                tb.Inlines.Add(new Run($"{Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%") { FontSize = AxisFont * _scale });
+                tb.Inlines.Add(new Run($"{Math.Clamp(bar.UsedFraction, 0, 1) * 100:0}%")
+                {
+                    FontSize = BarGraphParts.Font(AxisFont, _scale),
+                });
                 return tb;
             }, _glow);
     }
