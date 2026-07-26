@@ -18,5 +18,8 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             ("Left to Right", BarOrientation.LeftToRight),
             ("Right to Left", BarOrientation.RightToLeft),
         };
+
+        /// <summary>This graph's 0–100% ticks run along the bottom.</summary>
+        protected override string AxisLabel => "Show horizontal axis";
     }
 }

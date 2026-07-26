@@ -61,7 +61,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
 
         /// <summary>Everything <see cref="Render"/> was given, kept so a resize can replay it.</summary>
         private readonly record struct RenderArgs(IReadOnlyList<Bar> Bars, Color Track, double TrackOpacity,
-            Color Text, double Gap, BarOrientation Orientation, BarSkin Skin, Effect? Glow);
+            Color Text, double Gap, bool ShowAxis, BarOrientation Orientation, BarSkin Skin, Effect? Glow);
 
         public VerticalBarGauge()
         {
@@ -91,9 +91,9 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
         }
 
         internal void Render(IReadOnlyList<Bar> bars, Color track, double trackOpacity, Color text,
-            double gap, BarOrientation orientation, BarSkin skin, Effect? glow)
+            double gap, bool showAxis, BarOrientation orientation, BarSkin skin, Effect? glow)
         {
-            _last = new RenderArgs(bars, track, trackOpacity, text, gap, orientation, skin, glow);
+            _last = new RenderArgs(bars, track, trackOpacity, text, gap, showAxis, orientation, skin, glow);
             Build();
         }
 
@@ -149,8 +149,9 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             double gap = Math.Clamp(args.Gap, 0, 0.5);
 
             // What one bar will actually be, so the captions can be sized to fit it. The y-axis is
-            // Auto-width, so estimate it from the widest tick — the same text it will lay out.
-            double yAxisWidth = BarGraphParts.Measure("100%", axisFont).Width + axisGap;
+            // Auto-width, so estimate it from the widest tick — the same text it will lay out. With
+            // the axis hidden that column collapses and the whole width is the plot's.
+            double yAxisWidth = args.ShowAxis ? BarGraphParts.Measure("100%", axisFont).Width + axisGap : 0;
             double plotWidth = Math.Max(0, ActualWidth - yAxisWidth - edgePad);
             double barThickness = plotWidth * (1 - gap) / n;
 
@@ -186,10 +187,14 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
                 Root.Children.Add(Place(totals, totalsRow, col: 1));
             }
 
-            // Y-axis (100 / 50 / 0) aligned to the plot area.
-            var yaxis = BuildYAxis(args.Text, axisFont);
-            yaxis.Margin = new Thickness(0, 0, axisGap, 0);
-            Root.Children.Add(Place(yaxis, row: 1, col: 0));
+            // Y-axis (100 / 50 / 0) aligned to the plot area. Left out entirely when it's switched
+            // off, so its Auto column collapses and the bars take the width back.
+            if (args.ShowAxis)
+            {
+                var yaxis = BuildYAxis(args.Text, axisFont);
+                yaxis.Margin = new Thickness(0, 0, axisGap, 0);
+                Root.Children.Add(Place(yaxis, row: 1, col: 0));
+            }
 
             // Plot: faint gridlines behind (full width), then the bars spanning it.
             var plot = new Grid();

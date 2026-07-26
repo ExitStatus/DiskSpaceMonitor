@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DiskSpaceMonitor.Views;
 using DiskSpaceMonitor.Widgets.Effects;
 
 namespace DiskSpaceMonitor.Widgets.Circular
@@ -27,7 +28,9 @@ namespace DiskSpaceMonitor.Widgets.Circular
             {
                 new WidgetConfigTab("Appearance", _appearance),
                 new WidgetConfigTab("Colours", _colours),
-                new WidgetConfigTab("Effects", _glow.View),
+                // The glow rows are the whole tab here, so the tab is their scope. (In the bar graphs
+                // the same view sits inside a bigger Effects tab, which scopes it instead.)
+                new WidgetConfigTab("Effects", SettingRow.Scope(_glow.View)),
             };
         }
 

@@ -33,6 +33,10 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         /// <summary>The orientation choices this widget offers, in dropdown order.</summary>
         protected abstract (string Label, BarOrientation Value)[] Orientations { get; }
 
+        /// <summary>Caption for the axis toggle. The 0–100% ticks run up the side of one graph and
+        /// along the bottom of the other, so each names its own direction.</summary>
+        protected abstract string AxisLabel { get; }
+
         public IWidgetConfig DefaultConfig() => new BarGraphConfig { Orientation = DefaultOrientation };
 
         public IWidgetConfig ReadConfig(JsonNode? json)
@@ -55,7 +59,7 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
 
         public IWidgetConfigEditor CreateEditor(IWidgetConfig initial, Action onChanged,
             IReadOnlyList<string> shownDrives)
-            => new BarGraphConfigEditor((BarGraphConfig)initial, onChanged, Orientations);
+            => new BarGraphConfigEditor((BarGraphConfig)initial, onChanged, Orientations, AxisLabel);
 
         // Both widgets share one config type, and so one Orientation property covering all four
         // directions. A blob written by the other graph (or hand-edited) can therefore name an

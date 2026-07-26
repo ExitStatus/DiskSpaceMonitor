@@ -75,99 +75,57 @@ namespace DiskSpaceMonitor.Widgets.Concentric
         {
             var panel = new StackPanel { Margin = new Thickness(6, 16, 6, 6) };
 
-            panel.Children.Add(new TextBlock { Text = "Ring thickness", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
-
-            var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             _thickness = new Slider
             {
                 Minimum = 2,
                 Maximum = 40,
                 SmallChange = 1,
                 LargeChange = 4,
-                VerticalAlignment = VerticalAlignment.Center,
                 Value = Math.Clamp(initial.RingThickness, 2, 40),
             };
-            var thicknessValue = new TextBlock
-            {
-                Width = 44,
-                TextAlignment = TextAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
-                Text = $"{_thickness.Value:0}",
-            };
+            var thicknessValue = SettingRow.Readout($"{_thickness.Value:0}");
             _thickness.ValueChanged += (_, e) => { thicknessValue.Text = $"{e.NewValue:0}"; Raise(); };
-            Grid.SetColumn(_thickness, 0);
-            Grid.SetColumn(thicknessValue, 1);
-            grid.Children.Add(_thickness);
-            grid.Children.Add(thicknessValue);
-            panel.Children.Add(grid);
+            panel.Children.Add(SettingRow.Build("Ring thickness", _thickness, thicknessValue,
+                tooltip: "How wide each drive's ring is drawn. Thicker rings mean fewer fit in the "
+                    + "widget, so the innermost ones get smaller."));
 
-            panel.Children.Add(new TextBlock { Text = "Unused space transparency", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
-            var trackGrid = new Grid();
-            trackGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            trackGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             _trackOpacity = new Slider
             {
                 Minimum = 0,
                 Maximum = 1,
                 SmallChange = 0.05,
                 LargeChange = 0.1,
-                VerticalAlignment = VerticalAlignment.Center,
                 Value = Math.Clamp(initial.TrackOpacity, 0, 1),
             };
-            var trackValue = new TextBlock
-            {
-                Width = 44,
-                TextAlignment = TextAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
-                Text = $"{_trackOpacity.Value * 100:0}%",
-            };
+            var trackValue = SettingRow.Readout($"{_trackOpacity.Value * 100:0}%");
             _trackOpacity.ValueChanged += (_, e) => { trackValue.Text = $"{e.NewValue * 100:0}%"; Raise(); };
-            Grid.SetColumn(_trackOpacity, 0);
-            Grid.SetColumn(trackValue, 1);
-            trackGrid.Children.Add(_trackOpacity);
-            trackGrid.Children.Add(trackValue);
-            panel.Children.Add(trackGrid);
+            panel.Children.Add(SettingRow.Build("Unused space transparency", _trackOpacity, trackValue, topMargin: 12,
+                tooltip: "How solid the unswept part of each ring is drawn. 0% hides it and leaves "
+                    + "just the used arc."));
 
-            _lowThreshold = AddPercentSlider(panel,
-                "Chip turns 'low' when free space drops below", initial.LowThresholdPercent);
-            _criticalThreshold = AddPercentSlider(panel,
-                "Chip turns 'critical' when free space drops below", initial.CriticalThresholdPercent);
+            _lowThreshold = AddPercentSlider(panel, "Low threshold", initial.LowThresholdPercent,
+                "A drive with less free space than this turns its label chip the 'low' colour.");
+            _criticalThreshold = AddPercentSlider(panel, "Critical threshold", initial.CriticalThresholdPercent,
+                "A drive with less free space than this turns its label chip the 'critical' colour. "
+                    + "It wins over the low threshold.");
 
-            return panel;
+            return SettingRow.Scope(panel);
         }
 
         /// <summary>Appends a captioned 1–90% slider (with a live "NN%" readout) and returns it.</summary>
-        private Slider AddPercentSlider(StackPanel panel, string caption, double initial)
+        private Slider AddPercentSlider(StackPanel panel, string caption, double initial, string tooltip)
         {
-            panel.Children.Add(new TextBlock { Text = caption, FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
-
-            var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var slider = new Slider
             {
                 Minimum = 1,
                 Maximum = 90,
                 SmallChange = 1,
                 LargeChange = 5,
-                VerticalAlignment = VerticalAlignment.Center,
                 Value = Math.Clamp(initial, 1, 90),
             };
-            var value = new TextBlock
-            {
-                Width = 44,
-                TextAlignment = TextAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
-                Text = $"{slider.Value:0}%",
-            };
+            var value = SettingRow.Readout($"{slider.Value:0}%");
             slider.ValueChanged += (_, e) => { value.Text = $"{e.NewValue:0}%"; Raise(); };
-            Grid.SetColumn(slider, 0);
-            Grid.SetColumn(value, 1);
-            grid.Children.Add(slider);
-            grid.Children.Add(value);
-            panel.Children.Add(grid);
+            panel.Children.Add(SettingRow.Build(caption, slider, value, topMargin: 12, tooltip: tooltip));
             return slider;
         }
 
@@ -177,13 +135,17 @@ namespace DiskSpaceMonitor.Widgets.Concentric
 
             // Label text colour.
             panel.Children.Add(SubHeading("Label text", 0));
-            _textRow = AddColorRow(panel, "Text", ColorUtil.Parse(initial.TextColor, Colors.White));
+            _textRow = AddColorRow(panel, "Text", ColorUtil.Parse(initial.TextColor, Colors.White),
+                "The colour of the text inside each label chip (\"C 90%\").");
 
             // Status colours for the label chips (independent of the drive set).
             panel.Children.Add(SubHeading("Chip status", 12));
-            _healthyRow = AddColorRow(panel, "Healthy", ColorUtil.Parse(initial.HealthyColor, Color.FromRgb(0x4C, 0xAF, 0x50)));
-            _warningRow = AddColorRow(panel, "Low", ColorUtil.Parse(initial.WarningColor, Color.FromRgb(0xFF, 0xB3, 0x00)));
-            _criticalRow = AddColorRow(panel, "Critical", ColorUtil.Parse(initial.CriticalColor, Color.FromRgb(0xF4, 0x43, 0x36)));
+            _healthyRow = AddColorRow(panel, "Healthy", ColorUtil.Parse(initial.HealthyColor, Color.FromRgb(0x4C, 0xAF, 0x50)),
+                "The chip colour for a drive with more free space than the low threshold.");
+            _warningRow = AddColorRow(panel, "Low", ColorUtil.Parse(initial.WarningColor, Color.FromRgb(0xFF, 0xB3, 0x00)),
+                "The chip colour for a drive below the low threshold.");
+            _criticalRow = AddColorRow(panel, "Critical", ColorUtil.Parse(initial.CriticalColor, Color.FromRgb(0xF4, 0x43, 0x36)),
+                "The chip colour for a drive below the critical threshold.");
 
             // Per-drive ring colours.
             panel.Children.Add(SubHeading("Drive ring colours", 12));
@@ -197,7 +159,13 @@ namespace DiskSpaceMonitor.Widgets.Concentric
                 {
                     var path = shownDrives[i];
                     var seed = ColorUtil.Parse(ConcentricPalette.ColorFor(initial, path, i), Colors.Gray);
-                    var row = new ColorRow { Label = path.TrimEnd('\\'), Color = seed };
+                    var row = new ColorRow
+                    {
+                        Label = path.TrimEnd('\\'),
+                        Color = seed,
+                        ToolTip = $"The ring colour for {path.TrimEnd('\\')} — the used part of its "
+                            + "arc. The status colours above apply to its label chip, not the ring.",
+                    };
                     row.ColorChanged += _ => Raise();
                     _driveRows[path] = row;
                     panel.Children.Add(row);
@@ -207,9 +175,9 @@ namespace DiskSpaceMonitor.Widgets.Concentric
             return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel };
         }
 
-        private ColorRow AddColorRow(StackPanel panel, string label, Color color)
+        private ColorRow AddColorRow(StackPanel panel, string label, Color color, string tooltip)
         {
-            var row = new ColorRow { Label = label, Color = color };
+            var row = new ColorRow { Label = label, Color = color, ToolTip = tooltip };
             row.ColorChanged += _ => Raise();
             panel.Children.Add(row);
             return row;

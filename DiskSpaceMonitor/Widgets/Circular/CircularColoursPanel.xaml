@@ -5,12 +5,18 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="6,12,6,6">
 
-            <views:ColorRow x:Name="BackgroundRow" Label="Background"/>
-            <views:ColorRow x:Name="TrackRow" Label="Track"/>
-            <views:ColorRow x:Name="HealthyRow" Label="Ring · healthy"/>
-            <views:ColorRow x:Name="WarningRow" Label="Ring · low"/>
-            <views:ColorRow x:Name="CriticalRow" Label="Ring · critical"/>
-            <views:ColorRow x:Name="TextRow" Label="Text"/>
+            <views:ColorRow x:Name="BackgroundRow" Label="Background"
+                            ToolTip="The colour of the disc behind the gauge, which gives the text something to sit on."/>
+            <views:ColorRow x:Name="TrackRow" Label="Track"
+                            ToolTip="The colour of the free part of the ring, beyond the used arc."/>
+            <views:ColorRow x:Name="HealthyRow" Label="Ring · healthy"
+                            ToolTip="The ring colour for a drive with more free space than the low threshold."/>
+            <views:ColorRow x:Name="WarningRow" Label="Ring · low"
+                            ToolTip="The ring colour for a drive below the low threshold."/>
+            <views:ColorRow x:Name="CriticalRow" Label="Ring · critical"
+                            ToolTip="The ring colour for a drive below the critical threshold."/>
+            <views:ColorRow x:Name="TextRow" Label="Text"
+                            ToolTip="The colour of the drive letter, free space and percentage in the centre."/>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

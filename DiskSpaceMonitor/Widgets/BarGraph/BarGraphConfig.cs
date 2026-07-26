@@ -61,6 +61,10 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         /// value against a thin bar simply rounds it as far as its thickness allows.</summary>
         public double BarCornerRadius { get; set; } = 3;
 
+        /// <summary>Show the 0–100% axis ticks alongside the plot. Off drops them and hands the room
+        /// they took to the bars; the faint gridlines stay, so the 50% mark is still readable.</summary>
+        public bool ShowAxis { get; set; } = true;
+
         /// <summary>Opacity of the unused part of each bar (0 = hidden, 1 = solid).</summary>
         public double TrackOpacity { get; set; } = 0.2;
 

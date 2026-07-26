@@ -246,7 +246,9 @@ namespace DiskSpaceMonitor.Views
                 Tag = path,
                 IsChecked = isChecked,
                 Margin = new Thickness(0, 5, 0, 5),
-                FontSize = 13
+                FontSize = 13,
+                ToolTip = $"Show {path} in the widgets. The Circular style gives it a window of its "
+                    + "own; the other styles add it to their single window.",
             };
             box.Checked += (_, _) => UpdateGuards();
             box.Unchecked += (_, _) => UpdateGuards();

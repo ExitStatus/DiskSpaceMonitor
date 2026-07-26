@@ -10,17 +10,19 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
 {
     /// <summary>
     /// Settings editor shared by both bar graph widgets: an Appearance tab (orientation, the gap
-    /// between bars, the bars' corner rounding, unused-space transparency, the caption toggles and
-    /// the low/critical thresholds),
+    /// between bars, the bars' corner rounding, unused-space transparency, the axis and caption
+    /// toggles and the low/critical thresholds),
     /// a Colours tab (label text, the unused-bar track, and the healthy/low/critical status colours),
     /// and an Effects tab (the bar outline style and the reusable text outer glow). The hosting
-    /// widget supplies the orientation choices, which is all that differs between the vertical and
-    /// horizontal graphs — the graph's size is dragged on the widget itself, not set here.
+    /// widget supplies the orientation choices and the axis toggle's caption, which is all that
+    /// differs between the vertical and horizontal graphs — the graph's size is dragged on the
+    /// widget itself, not set here.
     /// </summary>
     public sealed class BarGraphConfigEditor : IWidgetConfigEditor
     {
         private readonly Action _onChanged;
         private readonly (string Label, BarOrientation Value)[] _orientations;
+        private readonly string _axisLabel;
         private readonly IReadOnlyList<WidgetConfigTab> _tabs;
 
         private ComboBox _orientation = null!;
@@ -35,6 +37,7 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         private Slider _barGap = null!;
         private Slider _cornerRadius = null!;
         private Slider _trackOpacity = null!;
+        private CheckBox _showAxis = null!;
         private CheckBox _showUsedSpace = null!;
         private CheckBox _showTotalSpace = null!;
         private Slider _lowThreshold = null!;
@@ -48,11 +51,14 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         private bool _ready;
 
         /// <param name="orientations">The orientation choices to offer, in dropdown order.</param>
+        /// <param name="axisLabel">Caption for the axis toggle, naming the direction this graph's
+        /// 0–100% ticks run in.</param>
         public BarGraphConfigEditor(BarGraphConfig initial, Action onChanged,
-            (string Label, BarOrientation Value)[] orientations)
+            (string Label, BarOrientation Value)[] orientations, string axisLabel)
         {
             _onChanged = onChanged;
             _orientations = orientations;
+            _axisLabel = axisLabel;
             _glow = new GlowEffectEditor(initial.Glow, Raise);
 
             _tabs = new[]
@@ -72,6 +78,7 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
             BarGapPercent = _barGap.Value,
             BarCornerRadius = _cornerRadius.Value,
             TrackOpacity = _trackOpacity.Value,
+            ShowAxis = _showAxis.IsChecked == true,
             ShowUsedSpace = _showUsedSpace.IsChecked == true,
             ShowTotalSpace = _showTotalSpace.IsChecked == true,
             LowThresholdPercent = _lowThreshold.Value,
@@ -99,30 +106,49 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         {
             var panel = new StackPanel { Margin = new Thickness(6, 16, 6, 6) };
 
-            panel.Children.Add(new TextBlock { Text = "Orientation", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
-            _orientation = AddCombo(panel, _orientations, initial.Orientation);
+            _orientation = AddCombo(panel, "Orientation", _orientations, initial.Orientation, topMargin: 0,
+                tooltip: "Which end of the axis 0% sits at, and so the direction the bars fill.");
 
-            panel.Children.Add(new TextBlock { Text = "Gap between bars", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
-            _barGap = AddSlider(panel, min: 0, max: 50, value: initial.BarGapPercent,
-                small: 5, large: 10, format: v => $"{v:0}%", topMargin: 0, addCaption: false);
+            // What the graph shows, then how it is drawn: the toggles decide which parts are there at
+            // all, so they sit with the orientation rather than among the sliders that size them.
+            _showAxis = AddCheckBox(panel, _axisLabel, initial.ShowAxis, topMargin: 16,
+                tooltip: "Show the 0–100% scale beside the plot. Hiding it gives the room to the bars; "
+                    + "the faint gridlines stay either way.");
+            _showUsedSpace = AddCheckBox(panel, "Show used space", initial.ShowUsedSpace, topMargin: 8,
+                tooltip: "Write how much of each drive is in use (e.g. \"400 GB\") against its bar.");
+            _showTotalSpace = AddCheckBox(panel, "Show total space", initial.ShowTotalSpace, topMargin: 8,
+                tooltip: "Write each drive's total size at the 100% end of its bar.");
 
-            panel.Children.Add(new TextBlock { Text = "Corner radius", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
-            _cornerRadius = AddSlider(panel, min: 0, max: 20, value: initial.BarCornerRadius,
-                small: 1, large: 2, format: v => $"{v:0}", topMargin: 0, addCaption: false);
+            _barGap = AddSlider(panel, "Gap between bars", min: 0, max: 50, value: initial.BarGapPercent,
+                small: 5, large: 10, format: v => $"{v:0}%", topMargin: 16,
+                tooltip: "How much of each bar's share of the graph is space rather than bar. The bars "
+                    + "always fill the window, so this divides it up — it doesn't resize the graph.");
+
+            _cornerRadius = AddSlider(panel, "Corner radius", min: 0, max: 20, value: initial.BarCornerRadius,
+                small: 1, large: 2, format: v => $"{v:0}", topMargin: 12,
+                tooltip: "How rounded the ends of each bar are. 0 gives square corners; a large value "
+                    + "rounds a bar as far as its thickness allows.");
             _cornerRadius.TickFrequency = 1;
             _cornerRadius.IsSnapToTickEnabled = true;
 
-            panel.Children.Add(new TextBlock { Text = "Unused space transparency", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
-            _trackOpacity = AddSlider(panel, min: 0, max: 1, value: initial.TrackOpacity,
-                small: 0.05, large: 0.1, format: v => $"{v * 100:0}%", topMargin: 0, addCaption: false);
+            _trackOpacity = AddSlider(panel, "Unused space transparency", min: 0, max: 1, value: initial.TrackOpacity,
+                small: 0.05, large: 0.1, format: v => $"{v * 100:0}%", topMargin: 12,
+                tooltip: "How solid the free part of each bar is drawn, beyond the fill. 0% hides it "
+                    + "and leaves the fill floating on the desktop.");
 
-            _showUsedSpace = AddCheckBox(panel, "Show used space", initial.ShowUsedSpace, topMargin: 16);
-            _showTotalSpace = AddCheckBox(panel, "Show total space", initial.ShowTotalSpace, topMargin: 8);
+            _lowThreshold = AddPercentSlider(panel, "Low threshold", initial.LowThresholdPercent,
+                tooltip: "A drive with less free space than this turns the 'low' colour.");
+            _criticalThreshold = AddPercentSlider(panel, "Critical threshold", initial.CriticalThresholdPercent,
+                tooltip: "A drive with less free space than this turns the 'critical' colour. "
+                    + "It wins over the low threshold.");
 
-            _lowThreshold = AddPercentSlider(panel, "Bar turns 'low' when free space drops below", initial.LowThresholdPercent);
-            _criticalThreshold = AddPercentSlider(panel, "Bar turns 'critical' when free space drops below", initial.CriticalThresholdPercent);
-
-            return panel;
+            // Scrollable like the other two tabs: this is the longest of them, and the dialog is a
+            // fixed size, so without this the last settings sit below the bottom edge unreachable.
+            return SettingRow.Scope(new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = panel,
+            });
         }
 
         // Effects: how each bar's fill is outlined, then the reusable text outer glow. Only the rows
@@ -133,24 +159,20 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
             var panel = new StackPanel();
 
             var style = new StackPanel { Margin = new Thickness(6, 16, 6, 0) };
-            style.Children.Add(new TextBlock { Text = "Bar style", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
-            _barStyle = AddCombo(style, new[]
+            _barStyle = AddCombo(style, "Bar style", new[]
             {
                 ("Plain", BarStyle.Plain),
                 ("Border", BarStyle.Border),
                 ("3D Border", BarStyle.ThreeDBorder),
-            }, initial.BarStyle);
+            }, initial.BarStyle, topMargin: 0,
+                tooltip: "How each bar's fill is outlined: Plain leaves it bare, Border rings it evenly, "
+                    + "3D Border bevels it so it reads as raised.");
 
             var sizePanel = new StackPanel();
-            sizePanel.Children.Add(new TextBlock
-            {
-                Text = "Border size",
-                FontSize = 12,
-                Opacity = 0.7,
-                Margin = new Thickness(0, 16, 0, 4),
-            });
-            _borderSize = AddSlider(sizePanel, min: 1, max: 10, value: initial.BorderSize,
-                small: 1, large: 2, format: v => $"{v:0}", topMargin: 0, addCaption: false);
+            _borderSize = AddSlider(sizePanel, "Border size", min: 1, max: 10, value: initial.BorderSize,
+                small: 1, large: 2, format: v => $"{v:0}", topMargin: 12,
+                tooltip: "How thick the outline or bevel is. It scales with the graph, so it keeps its "
+                    + "weight as you resize the widget.");
             _borderSize.TickFrequency = 1;
             _borderSize.IsSnapToTickEnabled = true;
             style.Children.Add(sizePanel);
@@ -158,14 +180,17 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
 
             var borderColours = new StackPanel();
             borderColours.Children.Add(SubHeading("Border colour", 16));
-            _borderRow = AddColorRow(borderColours, "Border", ColorUtil.Parse(initial.BorderColor, Colors.White));
+            _borderRow = AddColorRow(borderColours, "Border", ColorUtil.Parse(initial.BorderColor, Colors.White),
+                "The colour of the outline drawn around each bar's fill.");
             style.Children.Add(borderColours);
             _borderColourPanel = borderColours;
 
             var bevelColours = new StackPanel();
             bevelColours.Children.Add(SubHeading("Bevel colours", 16));
-            _highlightRow = AddColorRow(bevelColours, "Highlight", ColorUtil.Parse(initial.HighlightColor, Colors.White));
-            _lowlightRow = AddColorRow(bevelColours, "Lowlight", ColorUtil.Parse(initial.LowlightColor, Colors.Black));
+            _highlightRow = AddColorRow(bevelColours, "Highlight", ColorUtil.Parse(initial.HighlightColor, Colors.White),
+                "The lit edge of the bevel, drawn along the top and left of each bar.");
+            _lowlightRow = AddColorRow(bevelColours, "Lowlight", ColorUtil.Parse(initial.LowlightColor, Colors.Black),
+                "The shaded edge of the bevel, drawn down the right and along the bottom of each bar.");
             style.Children.Add(bevelColours);
             _bevelColourPanel = bevelColours;
 
@@ -175,7 +200,12 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
             panel.Children.Add(style);
             panel.Children.Add(_glow.View);
 
-            return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel };
+            // One scope for the whole tab, so the glow's row lines up with the bar style rows above it.
+            return SettingRow.Scope(new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = panel,
+            });
         }
 
         // Show only the rows the selected bar style uses.
@@ -192,28 +222,34 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
             var panel = new StackPanel { Margin = new Thickness(6, 12, 6, 6) };
 
             panel.Children.Add(SubHeading("Labels", 0));
-            _textRow = AddColorRow(panel, "Text", ColorUtil.Parse(initial.TextColor, Colors.White));
+            _textRow = AddColorRow(panel, "Text", ColorUtil.Parse(initial.TextColor, Colors.White),
+                "The colour of every piece of text on the graph: drive labels, axis ticks and captions.");
 
             panel.Children.Add(SubHeading("Unused space", 12));
-            _trackRow = AddColorRow(panel, "Track", ColorUtil.Parse(initial.TrackColor, Color.FromRgb(0x6E, 0x76, 0x86)));
+            _trackRow = AddColorRow(panel, "Track", ColorUtil.Parse(initial.TrackColor, Color.FromRgb(0x6E, 0x76, 0x86)),
+                "The colour of the free part of each bar, beyond the fill.");
 
             panel.Children.Add(SubHeading("Bar status", 12));
-            _healthyRow = AddColorRow(panel, "Healthy", ColorUtil.Parse(initial.HealthyColor, Color.FromRgb(0x4C, 0xAF, 0x50)));
-            _warningRow = AddColorRow(panel, "Low", ColorUtil.Parse(initial.WarningColor, Color.FromRgb(0xFF, 0xB3, 0x00)));
-            _criticalRow = AddColorRow(panel, "Critical", ColorUtil.Parse(initial.CriticalColor, Color.FromRgb(0xF4, 0x43, 0x36)));
+            _healthyRow = AddColorRow(panel, "Healthy", ColorUtil.Parse(initial.HealthyColor, Color.FromRgb(0x4C, 0xAF, 0x50)),
+                "The bar colour for a drive with more free space than the low threshold.");
+            _warningRow = AddColorRow(panel, "Low", ColorUtil.Parse(initial.WarningColor, Color.FromRgb(0xFF, 0xB3, 0x00)),
+                "The bar colour for a drive below the low threshold.");
+            _criticalRow = AddColorRow(panel, "Critical", ColorUtil.Parse(initial.CriticalColor, Color.FromRgb(0xF4, 0x43, 0x36)),
+                "The bar colour for a drive below the critical threshold.");
 
             return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel };
         }
 
-        // A labelled-value dropdown, selecting the item matching <paramref name="initial"/> (falling
+        // A captioned dropdown, selecting the item matching <paramref name="initial"/> (falling
         // back to the first) and previewing on every change.
-        private ComboBox AddCombo<T>(StackPanel panel, (string Label, T Value)[] options, T initial)
+        private ComboBox AddCombo<T>(StackPanel panel, string label, (string Label, T Value)[] options,
+            T initial, double topMargin, string tooltip)
             where T : struct, Enum
         {
             var combo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
-            foreach (var (label, value) in options)
+            foreach (var (text, value) in options)
             {
-                var item = new ComboBoxItem { Content = label, Tag = value };
+                var item = new ComboBoxItem { Content = text, Tag = value };
                 combo.Items.Add(item);
                 if (value.Equals(initial))
                     combo.SelectedItem = item;
@@ -221,70 +257,54 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
 
             combo.SelectedItem ??= combo.Items[0];
             combo.SelectionChanged += (_, _) => Raise();
-            panel.Children.Add(combo);
+            panel.Children.Add(SettingRow.Build(label, combo, topMargin: topMargin, tooltip: tooltip));
             return combo;
         }
 
         private static T Selected<T>(ComboBox combo) => (T)((ComboBoxItem)combo.SelectedItem).Tag;
 
-        private Slider AddPercentSlider(StackPanel panel, string caption, double initial)
-        {
-            panel.Children.Add(new TextBlock { Text = caption, FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
-            return AddSlider(panel, min: 1, max: 90, value: initial, small: 1, large: 5,
-                format: v => $"{v:0}%", topMargin: 0, addCaption: false);
-        }
+        private Slider AddPercentSlider(StackPanel panel, string caption, double initial, string tooltip)
+            => AddSlider(panel, caption, min: 1, max: 90, value: initial, small: 1, large: 5,
+                format: v => $"{v:0}%", topMargin: 12, tooltip: tooltip);
 
-        // Adds a slider row (slider + right-aligned readout) and returns the slider.
-        private Slider AddSlider(StackPanel panel, double min, double max, double value,
-            double small, double large, Func<double, string> format, double topMargin, bool addCaption)
+        // Adds a captioned slider row (caption + slider + right-aligned readout) and returns the slider.
+        private Slider AddSlider(StackPanel panel, string label, double min, double max, double value,
+            double small, double large, Func<double, string> format, double topMargin, string tooltip)
         {
-            var grid = new Grid { Margin = new Thickness(0, topMargin, 0, 0) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
             var slider = new Slider
             {
                 Minimum = min,
                 Maximum = max,
                 SmallChange = small,
                 LargeChange = large,
-                VerticalAlignment = VerticalAlignment.Center,
                 Value = Math.Clamp(value, min, max),
             };
-            var readout = new TextBlock
-            {
-                Width = 44,
-                TextAlignment = TextAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
-                Text = format(slider.Value),
-            };
+            var readout = SettingRow.Readout(format(slider.Value));
             slider.ValueChanged += (_, e) => { readout.Text = format(e.NewValue); Raise(); };
-            Grid.SetColumn(slider, 0);
-            Grid.SetColumn(readout, 1);
-            grid.Children.Add(slider);
-            grid.Children.Add(readout);
-            panel.Children.Add(grid);
+            panel.Children.Add(SettingRow.Build(label, slider, readout, topMargin, tooltip));
             return slider;
         }
 
-        private CheckBox AddCheckBox(StackPanel panel, string label, bool isChecked, double topMargin)
+        // The checkbox carries its own caption, so it is indented to start where the labelled
+        // controls do instead of hanging off the panel's left edge.
+        private CheckBox AddCheckBox(StackPanel panel, string label, bool isChecked, double topMargin,
+            string tooltip)
         {
             var check = new CheckBox
             {
                 Content = label,
                 FontSize = 13,
-                Margin = new Thickness(0, topMargin, 0, 0),
                 IsChecked = isChecked,
             };
             check.Checked += (_, _) => Raise();
             check.Unchecked += (_, _) => Raise();
-            panel.Children.Add(check);
+            panel.Children.Add(SettingRow.Indented(check, topMargin, tooltip));
             return check;
         }
 
-        private ColorRow AddColorRow(StackPanel panel, string label, Color color)
+        private ColorRow AddColorRow(StackPanel panel, string label, Color color, string tooltip)
         {
-            var row = new ColorRow { Label = label, Color = color };
+            var row = new ColorRow { Label = label, Color = color, ToolTip = tooltip };
             row.ColorChanged += _ => Raise();
             panel.Children.Add(row);
             return row;

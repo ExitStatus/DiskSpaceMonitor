@@ -34,7 +34,8 @@ drive's status):
     *Bottom Up* (0% at the bottom, bars growing up) or *Top Down* (0% at the top,
     bars hanging down), the gap between bars, how far their corners are rounded
     (square through to fully pill-shaped), the unused-space transparency, colours
-    and thresholds are all configurable. The bars always fill the window,
+    and thresholds are all configurable, and the 0–100% axis can be switched off to
+    give its room to the bars. The bars always fill the window,
     so you set the graph's shape by dragging it (see below). The used and total
     space per drive can optionally be shown on/above each bar — those captions
     auto-size to one shared size that fits the bar, and rotate vertically when a
@@ -46,8 +47,8 @@ drive's status):
     running across a 0–100% axis, stacked down the window, with the drive label at
     the 0% end and the total at the 100% end. Its **Orientation** is *Left to Right*
     (0% at the left) or *Right to Left* (0% at the right), and it offers the same
-    bar gap, corner rounding, transparency, colours, thresholds, captions, bar styles
-    and glow as the vertical graph. Captions scale to the bar's slot rather than rotating, since a
+    bar gap, corner rounding, transparency, colours, thresholds, captions, axis
+    toggle, bar styles and glow as the vertical graph. Captions scale to the bar's slot rather than rotating, since a
     horizontal bar has the whole axis to write along.
 - **Bar graphs stretch in either direction** – both graphs get a resize handle at
   the centre of each side as well as at each corner, and the chart fills whatever
@@ -193,9 +194,10 @@ The settings dialog (the centred ⚙ button or right-click → Settings…) is t
     transparency, and the low/critical thresholds) and *Colours* (the label-text
     colour, the healthy/low/critical **chip status** colours, and a **ring colour
     per drive**).
-  - **Vertical bar graph** – *Appearance* (**Orientation**, **Gap between bars**,
-    **Corner radius**, unused-space transparency, **Show used space** / **Show total
-    space** toggles, and the low/critical thresholds), *Colours* (label text, the unused-space track,
+  - **Vertical bar graph** – *Appearance* (**Orientation**; the **Show vertical
+    axis** / **Show used space** / **Show total space** toggles; **Gap between bars**,
+    **Corner radius** and unused-space transparency; and the low/critical
+    thresholds), *Colours* (label text, the unused-space track,
     and the healthy/low/critical status colours), and *Effects* (a **Bar style** of
     Plain, Border or 3D Border with its size and colours, plus an outer-glow
     radius and colour applied behind all the widget's text). There is no bar-size
@@ -204,6 +206,11 @@ The settings dialog (the centred ⚙ button or right-click → Settings…) is t
     *Left to Right* / *Right to Left* orientations. It keeps its own copy of every
     setting — and its own window size and position — so the two graphs can be
     styled and shaped differently.
+
+Every setting sits on one row — a right-aligned caption, then its control, then its
+value — with the captions in a column sized to the tab showing, so the controls line
+up down the page. Hovering any part of a row (caption, control or value) explains
+what that setting affects.
 
 Each colour is edited with a swatch, an editable `#RRGGBB` box (copy/paste), and a
 pipette button that opens a hue/saturation/brightness picker with gradient sliders

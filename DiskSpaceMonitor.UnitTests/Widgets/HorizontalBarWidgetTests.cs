@@ -43,6 +43,14 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         }
 
         [Test]
+        public void WriteThenRead_RoundTripsTheHiddenAxis()
+        {
+            var node = _widget.WriteConfig(new BarGraphConfig { ShowAxis = false });
+
+            ((BarGraphConfig)_widget.ReadConfig(node)).ShowAxis.Should().BeFalse();
+        }
+
+        [Test]
         public void WriteThenRead_RoundTripsRightToLeft()
         {
             var node = _widget.WriteConfig(new BarGraphConfig { Orientation = BarOrientation.RightToLeft });
@@ -90,6 +98,47 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         {
             ((IWidgetView)new CircularView()).ResizesFreely.Should().BeFalse();
             ((IWidgetView)new ConcentricView()).ResizesFreely.Should().BeFalse();
+        }
+
+        // The axis toggle is the one caption that can't be shared: the same ticks run up the side of
+        // one graph and along the bottom of the other, so each widget names its own direction.
+        [Test]
+        [Apartment(System.Threading.ApartmentState.STA)]
+        public void EachGraph_NamesItsOwnAxisDirection()
+        {
+            AxisToggleCaption(new HorizontalBarWidget()).Should().Be("Show horizontal axis");
+            AxisToggleCaption(new VerticalBarWidget()).Should().Be("Show vertical axis");
+        }
+
+        // The Appearance tab's checkboxes, in the order the editor adds them: the axis toggle first.
+        private static string AxisToggleCaption(BarGraphWidget widget)
+        {
+            var appearance = widget
+                .CreateEditor(widget.DefaultConfig(), () => { }, System.Array.Empty<string>())
+                .Tabs[0].Content;
+
+            var box = FirstCheckBox(appearance);
+            return box == null ? "" : (string)box.Content;
+        }
+
+        // Each setting sits in a row grid inside the tab's panel, itself inside a scroller, so this
+        // walks down rather than assuming a depth.
+        private static System.Windows.Controls.CheckBox? FirstCheckBox(object? element)
+        {
+            switch (element)
+            {
+                case System.Windows.Controls.CheckBox box:
+                    return box;
+                case System.Windows.Controls.ContentControl holder:
+                    return FirstCheckBox(holder.Content);
+                case System.Windows.Controls.Panel panel:
+                    foreach (var child in panel.Children)
+                        if (FirstCheckBox(child) is { } found)
+                            return found;
+                    return null;
+                default:
+                    return null;
+            }
         }
 
         [Test]

@@ -20,5 +20,8 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             ("Bottom Up", BarOrientation.BottomUp),
             ("Top Down", BarOrientation.TopDown),
         };
+
+        /// <summary>This graph's 0–100% ticks run up the left-hand side.</summary>
+        protected override string AxisLabel => "Show vertical axis";
     }
 }

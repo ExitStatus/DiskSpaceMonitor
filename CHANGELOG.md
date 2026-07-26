@@ -29,9 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   downwards); the y-axis, the fill direction and the used-space captions all follow.
   The gap between bars, how far the bars' corners are rounded (square through to
   fully pill-shaped), the unused-space transparency, the track/status colours, and
-  the thresholds are configurable, and optional **Show used space** / **Show total
-  space** captions display the humanized used amount on each bar and the total
-  above it. The bars fill the window in both directions (see *Free sizing* below).
+  the thresholds are configurable; **Show vertical axis** hides the 0–100% scale and
+  hands its room to the bars (the gridlines stay); and optional **Show used space** /
+  **Show total space** captions display the humanized used amount on each bar and the
+  total above it. The bars fill the window in both directions (see *Free sizing* below).
   The used/total captions auto-size to one shared size that fits the bar and
   rotate 90° when a bar is too narrow for horizontal text. A **Bar style** on the
   Effects tab outlines the fill: **Plain**, **Border** (an even outline of a chosen
@@ -45,7 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (0% at the left — the default) or **Right to Left**, mirroring the axis, the fill
   direction, the labels and the totals. It offers the same bar gap, corner rounding,
   unused-space transparency, colours, thresholds, caption toggles, bar styles and text
-  glow as the vertical graph, and keeps its own copy of them all. Captions scale to the bar's slot
+  glow as the vertical graph — with **Show horizontal axis** for its own 0–100% scale
+  along the bottom — and keeps its own copy of them all. Captions scale to the bar's slot
   instead of rotating, since a horizontal bar has the whole axis to write along. Both
   graphs share their configuration, settings editor and fill rendering
   (`Widgets/BarGraph/`), so an option added to one arrives in the other.
@@ -70,6 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the widget is: a gauge dragged across the screen stops its labels growing at the
   maximum instead of turning them into a poster, and a small one holds them at the
   minimum instead of shrinking them away.
+- **Tooltips on every setting** – hovering any part of a settings row — its caption,
+  its control or its value — explains what that setting affects, on all four widget
+  styles as well as the General and Drives tabs.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
   chooser with gradient slider tracks and a live preview that updates the widget as
@@ -94,6 +99,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Appearance is now stored under a per-widget config block in `settings.json`;
   pre-1.1 settings files are migrated automatically on first load, preserving the
   existing look.
+- **Settings rows are laid out as a form.** Each setting now sits on one row — a
+  right-aligned caption, its control, then its value — instead of a caption stacked
+  above a full-width control, so the controls line up down the page. The captions
+  share a column sized to the tab you are on, so a tab reserves no room for captions
+  that live on a different one, and the dialog is 20% wider to suit. The threshold
+  captions ("Ring turns 'low' when free space drops below") are now just **Low
+  threshold** and **Critical threshold**, and on the bar graphs the three display
+  toggles moved up to sit with the orientation.
 - The **⚙ button** in the Ctrl-hover overlay moved from the bottom edge to the
   centre of the widget and is twice the size, making it an easier target on a
   small widget and freeing the bottom-centre resize handle on the bar graphs to

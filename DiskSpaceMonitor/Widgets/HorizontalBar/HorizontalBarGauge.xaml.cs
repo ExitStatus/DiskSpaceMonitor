@@ -65,7 +65,7 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
 
         /// <summary>Everything <see cref="Render"/> was given, kept so a resize can replay it.</summary>
         private readonly record struct RenderArgs(IReadOnlyList<Bar> Bars, Color Track, double TrackOpacity,
-            Color Text, double Gap, BarOrientation Orientation, BarSkin Skin, Effect? Glow);
+            Color Text, double Gap, bool ShowAxis, BarOrientation Orientation, BarSkin Skin, Effect? Glow);
 
         public HorizontalBarGauge()
         {
@@ -95,9 +95,9 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
         }
 
         internal void Render(IReadOnlyList<Bar> bars, Color track, double trackOpacity, Color text,
-            double gap, BarOrientation orientation, BarSkin skin, Effect? glow)
+            double gap, bool showAxis, BarOrientation orientation, BarSkin skin, Effect? glow)
         {
-            _last = new RenderArgs(bars, track, trackOpacity, text, gap, orientation, skin, glow);
+            _last = new RenderArgs(bars, track, trackOpacity, text, gap, showAxis, orientation, skin, glow);
             Build();
         }
 
@@ -150,8 +150,9 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             double gap = _gap = Math.Clamp(args.Gap, 0, 0.5);
 
             // The slot one bar sits in, so the captions can be sized to fit it. The axis row is
-            // Auto-height, so estimate it from a tick — the same text it will lay out.
-            double axisRow = BarGraphParts.Measure("100%", axisFont).Height + axisGap;
+            // Auto-height, so estimate it from a tick — the same text it will lay out. With the axis
+            // hidden that row collapses and the whole height is the plot's.
+            double axisRow = args.ShowAxis ? BarGraphParts.Measure("100%", axisFont).Height + axisGap : 0;
             double slot = Math.Max(0, ActualHeight - axisRow) / n;
 
             // One uniform font size for the used/total captions. Unlike the vertical graph — where a
@@ -164,10 +165,14 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             double captionFont = Math.Clamp(slot / LineHeightFactor,
                 _type.MinSize, BarGraphParts.Font(CaptionBaseFont, _scale, _type));
 
-            // Value axis (0 / 50 / 100) under the plot, aligned to the plot's edges.
-            var axis = BuildValueAxis(args.Text, axisFont);
-            axis.Margin = new Thickness(0, axisGap, 0, 0);
-            Root.Children.Add(Place(axis, row: 1, col: 1));
+            // Value axis (0 / 50 / 100) under the plot, aligned to the plot's edges. Left out entirely
+            // when it's switched off, so its Auto row collapses and the bars take the height back.
+            if (args.ShowAxis)
+            {
+                var axis = BuildValueAxis(args.Text, axisFont);
+                axis.Margin = new Thickness(0, axisGap, 0, 0);
+                Root.Children.Add(Place(axis, row: 1, col: 1));
+            }
 
             // Plot: faint gridlines behind (full height), then the bars spanning it.
             var plot = new Grid();

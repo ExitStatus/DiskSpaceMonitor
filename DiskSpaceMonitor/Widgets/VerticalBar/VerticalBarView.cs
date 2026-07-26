@@ -78,7 +78,8 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
 
             _gauge.Render(bars, ColorUtil.Parse(_config.TrackColor, Color.FromRgb(0x6E, 0x76, 0x86)),
                 _config.TrackOpacity, ColorUtil.Parse(_config.TextColor, Colors.White),
-                _config.BarGapPercent / 100.0, _config.Orientation, skin, GlowEffect.Build(_config.Glow));
+                _config.BarGapPercent / 100.0, _config.ShowAxis, _config.Orientation, skin,
+                GlowEffect.Build(_config.Glow));
         }
     }
 }

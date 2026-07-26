@@ -25,7 +25,6 @@ namespace DiskSpaceMonitor.Widgets.Effects
 
             var panel = new StackPanel { Margin = new Thickness(6, 16, 6, 6) };
 
-            panel.Children.Add(new TextBlock { Text = "Outer glow", FontSize = 13, Margin = new Thickness(0, 0, 0, 4) });
             _radius = BuildSlider(panel, initial.OuterGlowRadius);
 
             panel.Children.Add(new TextBlock
@@ -35,7 +34,13 @@ namespace DiskSpaceMonitor.Widgets.Effects
                 Opacity = 0.7,
                 Margin = new Thickness(0, 16, 0, 4),
             });
-            _colorRow = new ColorRow { Label = "Colour", Color = ColorUtil.Parse(initial.OuterGlowColor, Colors.White) };
+            _colorRow = new ColorRow
+            {
+                Label = "Colour",
+                Color = ColorUtil.Parse(initial.OuterGlowColor, Colors.White),
+                ToolTip = "The colour of the halo. A dark glow behind light text is what makes it "
+                    + "readable over a busy wallpaper.",
+            };
             _colorRow.ColorChanged += _ => Raise();
             panel.Children.Add(_colorRow);
 
@@ -61,10 +66,6 @@ namespace DiskSpaceMonitor.Widgets.Effects
 
         private Slider BuildSlider(StackPanel panel, double value)
         {
-            var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
             var slider = new Slider
             {
                 Minimum = 0,
@@ -73,22 +74,13 @@ namespace DiskSpaceMonitor.Widgets.Effects
                 LargeChange = 2,
                 TickFrequency = 1,
                 IsSnapToTickEnabled = true,
-                VerticalAlignment = VerticalAlignment.Center,
                 Value = Math.Clamp(value, 0, 10),
             };
-            var readout = new TextBlock
-            {
-                Width = 44,
-                TextAlignment = TextAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
-                Text = $"{slider.Value:0}",
-            };
+            var readout = SettingRow.Readout($"{slider.Value:0}");
             slider.ValueChanged += (_, e) => { readout.Text = $"{e.NewValue:0}"; Raise(); };
-            Grid.SetColumn(slider, 0);
-            Grid.SetColumn(readout, 1);
-            grid.Children.Add(slider);
-            grid.Children.Add(readout);
-            panel.Children.Add(grid);
+            panel.Children.Add(SettingRow.Build("Outer glow", slider, readout,
+                tooltip: "How far a soft halo spreads behind the widget's text, to lift it off the "
+                    + "wallpaper. 0 turns the glow off."));
             return slider;
         }
     }

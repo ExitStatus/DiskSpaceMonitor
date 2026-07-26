@@ -31,6 +31,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             c.BarGapPercent.Should().Be(20);
             c.BarCornerRadius.Should().Be(3);
             c.TrackOpacity.Should().Be(0.2);
+            c.ShowAxis.Should().BeTrue();
             c.ShowUsedSpace.Should().BeFalse();
             c.ShowTotalSpace.Should().BeFalse();
             c.LowThresholdPercent.Should().Be(40);
@@ -58,6 +59,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
                 BarGapPercent = 35,
                 BarCornerRadius = 12,
                 TrackOpacity = 0.35,
+                ShowAxis = false,
                 ShowUsedSpace = true,
                 ShowTotalSpace = true,
                 LowThresholdPercent = 30,
@@ -86,6 +88,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             loaded.BarGapPercent.Should().Be(35);
             loaded.BarCornerRadius.Should().Be(12);
             loaded.TrackOpacity.Should().Be(0.35);
+            loaded.ShowAxis.Should().BeFalse();
             loaded.ShowUsedSpace.Should().BeTrue();
             loaded.ShowTotalSpace.Should().BeTrue();
             loaded.LowThresholdPercent.Should().Be(30);
@@ -148,6 +151,16 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarGapPercent": 50 }""");
 
             ((BarGraphConfig)_widget.ReadConfig(node)).BarCornerRadius.Should().Be(3);
+        }
+
+        // Likewise the axis was always drawn, so a file written before the toggle existed keeps it.
+        // A bool defaulting to false would silently strip the axis from every existing graph.
+        [Test]
+        public void ReadConfig_PreAxisToggleSettings_KeepsTheAxis()
+        {
+            var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarGapPercent": 50 }""");
+
+            ((BarGraphConfig)_widget.ReadConfig(node)).ShowAxis.Should().BeTrue();
         }
 
         [Test]
