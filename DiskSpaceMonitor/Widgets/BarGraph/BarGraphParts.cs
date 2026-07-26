@@ -27,11 +27,13 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
     /// </summary>
     internal static class BarGraphParts
     {
-        /// <summary>Corner rounding applied to a bar's fill and track, before the gauge's scale.</summary>
-        internal const double CornerRadius = 3;
-
-        /// <summary>The bar's rounding at the gauge's current scale, never sharper than a hairline.</summary>
-        internal static double Corner(double scale) => Math.Max(1, CornerRadius * scale);
+        /// <summary>
+        /// The user's corner rounding at the gauge's current scale. Zero stays zero — square corners
+        /// are a deliberate choice — but any rounding at all keeps at least a hairline, so shrinking
+        /// a graph rounds the bars less rather than squaring them off.
+        /// </summary>
+        internal static double Corner(double radius, double scale)
+            => radius <= 0 ? 0 : Math.Max(1, radius * scale);
 
         /// <summary>
         /// A font size at the gauge's current scale, held within the user's size bounds. A graph

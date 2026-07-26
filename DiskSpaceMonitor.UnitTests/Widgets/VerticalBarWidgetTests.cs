@@ -29,6 +29,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             c.HighlightColor.Should().Be("#FFFFFF");
             c.LowlightColor.Should().Be("#000000");
             c.BarGapPercent.Should().Be(20);
+            c.BarCornerRadius.Should().Be(3);
             c.TrackOpacity.Should().Be(0.2);
             c.ShowUsedSpace.Should().BeFalse();
             c.ShowTotalSpace.Should().BeFalse();
@@ -55,6 +56,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
                 HighlightColor = "#C0FFEE",
                 LowlightColor = "#123456",
                 BarGapPercent = 35,
+                BarCornerRadius = 12,
                 TrackOpacity = 0.35,
                 ShowUsedSpace = true,
                 ShowTotalSpace = true,
@@ -82,6 +84,7 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
             loaded.HighlightColor.Should().Be("#C0FFEE");
             loaded.LowlightColor.Should().Be("#123456");
             loaded.BarGapPercent.Should().Be(35);
+            loaded.BarCornerRadius.Should().Be(12);
             loaded.TrackOpacity.Should().Be(0.35);
             loaded.ShowUsedSpace.Should().BeTrue();
             loaded.ShowTotalSpace.Should().BeTrue();
@@ -135,6 +138,16 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
 
             c.BarGapPercent.Should().Be(20);
             c.TrackOpacity.Should().Be(0.5);
+        }
+
+        // The rounding used to be a fixed 3px, so a settings file written before the setting existed
+        // has to land on 3 — an existing user's graphs must look exactly as they did.
+        [Test]
+        public void ReadConfig_PreCornerRadiusSettings_KeepsTheOldRounding()
+        {
+            var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "BarGapPercent": 50 }""");
+
+            ((BarGraphConfig)_widget.ReadConfig(node)).BarCornerRadius.Should().Be(3);
         }
 
         [Test]

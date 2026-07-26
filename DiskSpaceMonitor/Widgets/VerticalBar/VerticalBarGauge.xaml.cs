@@ -108,7 +108,7 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             _skin = args.Skin with
             {
                 Size = args.Skin.Size * _scale,
-                Corner = BarGraphParts.Corner(_scale),
+                Corner = BarGraphParts.Corner(args.Skin.Corner, _scale),
             };
 
             Root.Children.Clear();

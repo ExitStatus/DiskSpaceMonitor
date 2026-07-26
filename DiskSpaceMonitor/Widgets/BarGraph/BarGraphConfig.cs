@@ -56,6 +56,11 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         /// this controls how they are divided up, not how big the graph is.</summary>
         public double BarGapPercent { get; set; } = 20;
 
+        /// <summary>How rounded each bar's ends are (0–20), in pixels at the graph's reference size —
+        /// the gauge scales it with the graph, like the outline width. 0 gives square corners; a large
+        /// value against a thin bar simply rounds it as far as its thickness allows.</summary>
+        public double BarCornerRadius { get; set; } = 3;
+
         /// <summary>Opacity of the unused part of each bar (0 = hidden, 1 = solid).</summary>
         public double TrackOpacity { get; set; } = 0.2;
 

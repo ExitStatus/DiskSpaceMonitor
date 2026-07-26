@@ -29,8 +29,17 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
 
             c.Orientation.Should().Be(BarOrientation.LeftToRight);
             c.BarGapPercent.Should().Be(20);
+            c.BarCornerRadius.Should().Be(3);
             c.BarStyle.Should().Be(BarStyle.Plain);
             c.TrackColor.Should().Be("#6E7686");
+        }
+
+        [Test]
+        public void WriteThenRead_RoundTripsTheCornerRadius()
+        {
+            var node = _widget.WriteConfig(new BarGraphConfig { BarCornerRadius = 0 });
+
+            ((BarGraphConfig)_widget.ReadConfig(node)).BarCornerRadius.Should().Be(0);
         }
 
         [Test]

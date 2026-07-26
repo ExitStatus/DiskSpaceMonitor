@@ -27,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **Orientation** dropdown flips the axis between **Bottom Up** (0% at the bottom,
   bars growing upwards — the default) and **Top Down** (0% at the top, bars hanging
   downwards); the y-axis, the fill direction and the used-space captions all follow.
-  The gap between bars, the unused-space transparency, the track/status colours, and
+  The gap between bars, how far the bars' corners are rounded (square through to
+  fully pill-shaped), the unused-space transparency, the track/status colours, and
   the thresholds are configurable, and optional **Show used space** / **Show total
   space** captions display the humanized used amount on each bar and the total
   above it. The bars fill the window in both directions (see *Free sizing* below).
@@ -42,9 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stacked down the window, the drive label and its used % at the 0% end, and the
   total space at the 100% end. An **Orientation** dropdown picks **Left to Right**
   (0% at the left — the default) or **Right to Left**, mirroring the axis, the fill
-  direction, the labels and the totals. It offers the same bar gap, unused-space
-  transparency, colours, thresholds, caption toggles, bar styles and text glow as the
-  vertical graph, and keeps its own copy of them all. Captions scale to the bar's slot
+  direction, the labels and the totals. It offers the same bar gap, corner rounding,
+  unused-space transparency, colours, thresholds, caption toggles, bar styles and text
+  glow as the vertical graph, and keeps its own copy of them all. Captions scale to the bar's slot
   instead of rotating, since a horizontal bar has the whole axis to write along. Both
   graphs share their configuration, settings editor and fill rendering
   (`Widgets/BarGraph/`), so an option added to one arrives in the other.

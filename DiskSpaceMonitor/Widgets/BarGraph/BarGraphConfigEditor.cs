@@ -10,7 +10,8 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
 {
     /// <summary>
     /// Settings editor shared by both bar graph widgets: an Appearance tab (orientation, the gap
-    /// between bars, unused-space transparency, the caption toggles and the low/critical thresholds),
+    /// between bars, the bars' corner rounding, unused-space transparency, the caption toggles and
+    /// the low/critical thresholds),
     /// a Colours tab (label text, the unused-bar track, and the healthy/low/critical status colours),
     /// and an Effects tab (the bar outline style and the reusable text outer glow). The hosting
     /// widget supplies the orientation choices, which is all that differs between the vertical and
@@ -32,6 +33,7 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         private FrameworkElement _borderColourPanel = null!;
         private FrameworkElement _bevelColourPanel = null!;
         private Slider _barGap = null!;
+        private Slider _cornerRadius = null!;
         private Slider _trackOpacity = null!;
         private CheckBox _showUsedSpace = null!;
         private CheckBox _showTotalSpace = null!;
@@ -68,6 +70,7 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         {
             Orientation = Selected<BarOrientation>(_orientation),
             BarGapPercent = _barGap.Value,
+            BarCornerRadius = _cornerRadius.Value,
             TrackOpacity = _trackOpacity.Value,
             ShowUsedSpace = _showUsedSpace.IsChecked == true,
             ShowTotalSpace = _showTotalSpace.IsChecked == true,
@@ -102,6 +105,12 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
             panel.Children.Add(new TextBlock { Text = "Gap between bars", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
             _barGap = AddSlider(panel, min: 0, max: 50, value: initial.BarGapPercent,
                 small: 5, large: 10, format: v => $"{v:0}%", topMargin: 0, addCaption: false);
+
+            panel.Children.Add(new TextBlock { Text = "Corner radius", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
+            _cornerRadius = AddSlider(panel, min: 0, max: 20, value: initial.BarCornerRadius,
+                small: 1, large: 2, format: v => $"{v:0}", topMargin: 0, addCaption: false);
+            _cornerRadius.TickFrequency = 1;
+            _cornerRadius.IsSnapToTickEnabled = true;
 
             panel.Children.Add(new TextBlock { Text = "Unused space transparency", FontSize = 13, Margin = new Thickness(0, 16, 0, 4) });
             _trackOpacity = AddSlider(panel, min: 0, max: 1, value: initial.TrackOpacity,

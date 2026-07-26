@@ -71,7 +71,7 @@ namespace DiskSpaceMonitor.Widgets.HorizontalBar
             var skin = new BarSkin(
                 _config.BarStyle,
                 _config.BorderSize,
-                BarGraphParts.CornerRadius,
+                _config.BarCornerRadius,
                 ColorUtil.Parse(_config.BorderColor, Colors.White),
                 ColorUtil.Parse(_config.HighlightColor, Colors.White),
                 ColorUtil.Parse(_config.LowlightColor, Colors.Black));
