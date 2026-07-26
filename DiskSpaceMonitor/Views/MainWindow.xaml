@@ -56,18 +56,18 @@
             <Setter Property="Height" Value="22"/>
         </Style>
 
-        <!-- Round icon buttons (close / settings) shown in the edit overlay. -->
+        <!-- Round icon button shown in the edit overlay. -->
         <Style x:Key="IconButton" TargetType="Button">
-            <Setter Property="Width" Value="20"/>
-            <Setter Property="Height" Value="20"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="22"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="20">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"/>
                         </Border>
@@ -127,17 +127,16 @@
                             HorizontalAlignment="Center" VerticalAlignment="Top"
                             Margin="3" Cursor="SizeNS"
                             DragStarted="OnResizeStarted" DragDelta="OnResizeDelta" DragCompleted="OnResizeCompleted"/>
-                <!-- Nudged left of centre to clear the settings button, which sits dead centre. -->
                 <prim:Thumb Style="{StaticResource ResizeHandleH}" Tag="Bottom"
                             HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                            Margin="0,0,52,3" Cursor="SizeNS"
+                            Margin="3" Cursor="SizeNS"
                             DragStarted="OnResizeStarted" DragDelta="OnResizeDelta" DragCompleted="OnResizeCompleted"/>
             </Grid>
 
-            <!-- Settings button, bottom-centre. -->
+            <!-- Settings button, dead centre of the widget. -->
             <Button Style="{StaticResource IconButton}" Content="⚙" Click="OnSettingsClick"
-                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                    Margin="0,0,0,4" FontSize="13" Background="#CC3949AB" ToolTip="Settings"/>
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="#CC3949AB" ToolTip="Settings"/>
         </Grid>
     </Grid>
 </Window>

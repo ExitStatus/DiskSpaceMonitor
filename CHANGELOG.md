@@ -93,6 +93,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Appearance is now stored under a per-widget config block in `settings.json`;
   pre-1.1 settings files are migrated automatically on first load, preserving the
   existing look.
+- The **⚙ button** in the Ctrl-hover overlay moved from the bottom edge to the
+  centre of the widget and is twice the size, making it an easier target on a
+  small widget and freeing the bottom-centre resize handle on the bar graphs to
+  sit where the other side handles do.
 
 ### Removed
 

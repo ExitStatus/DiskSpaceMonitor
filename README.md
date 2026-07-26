@@ -99,7 +99,7 @@ drive's status):
 |-----------|----------------------------------------------------------------------|
 | Move      | Hold **Ctrl**, click-drag anywhere on the widget                     |
 | Resize    | Hold **Ctrl**, hover, drag a corner handle — or, on either bar graph, a side handle to stretch that way alone |
-| Settings  | Hold **Ctrl**, click the ⚙ button, or right-click → Settings…        |
+| Settings  | Hold **Ctrl**, click the ⚙ button in the centre, or right-click → Settings… |
 | Hide one  | Right-click → **Hide this drive** (Circular style only)              |
 | Quit      | Settings → **Exit Application**, or right-click → Exit application   |
 
@@ -175,7 +175,7 @@ Both are framework-dependent, so they need the .NET 10 Desktop Runtime installed
 
 ## Settings
 
-The settings dialog (⚙ button or right-click → Settings…) is tabbed:
+The settings dialog (the centred ⚙ button or right-click → Settings…) is tabbed:
 
 - **General** – auto-start at login, refresh interval, the **Widget** style
   dropdown, overall widget opacity, and the app-wide **text** settings: the
