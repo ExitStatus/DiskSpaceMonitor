@@ -195,10 +195,11 @@ The settings dialog (the centred ⚙ button or right-click → Settings…) is t
     transparency, and the low/critical thresholds) and *Colours* (the label-text
     colour, the healthy/low/critical **chip status** colours, and a **ring colour
     per drive**).
-  - **Vertical bar graph** – *Appearance* (**Orientation**; the **Show vertical
-    axis** / **Show used space** / **Show total space** toggles; **Gap between bars**,
-    **Corner radius** and unused-space transparency; and the low/critical
-    thresholds), *Colours* (label text, the unused-space track,
+  - **Vertical bar graph** – *Appearance*, divided by a rule into what the graph
+    shows (**Orientation** and the **Show vertical axis** / **Show used space** /
+    **Show total space** toggles) and how it's drawn (**Gap between bars**, **Corner
+    radius**, unused-space transparency and the low/critical thresholds);
+    *Colours* (label text, the unused-space track,
     and the healthy/low/critical status colours), and *Effects* (a **Bar style** of
     Plain, Border or 3D Border with its size and colours, plus an outer-glow
     radius and colour applied behind all the widget's text). There is no bar-size
@@ -209,9 +210,10 @@ The settings dialog (the centred ⚙ button or right-click → Settings…) is t
     styled and shaped differently.
 
 Every setting sits on one row — a right-aligned caption, then its control, then its
-value — with the captions in a column sized to the tab showing, so the controls line
-up down the page. Hovering any part of a row (caption, control or value) explains
-what that setting affects.
+value — with the captions in a column sized to the section showing, so the controls
+line up down the page without a short caption being pushed out by a long one
+elsewhere. Hovering any part of a row (caption, control or value) explains what that
+setting affects.
 
 Each colour is edited with a swatch, an editable `#RRGGBB` box (copy/paste), and a
 pipette button that opens a hue/saturation/brightness picker with gradient sliders

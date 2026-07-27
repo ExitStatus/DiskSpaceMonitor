@@ -106,49 +106,57 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         {
             var panel = new StackPanel { Margin = new Thickness(6, 16, 6, 6) };
 
-            _orientation = AddCombo(panel, "Orientation", _orientations, initial.Orientation, topMargin: 0,
+            // Two sections: what the graph shows, then how it is drawn. Each is its own caption
+            // scope, so the short captions above the rule aren't pushed out by the long ones below
+            // it — the sections line up within themselves, not with each other.
+            var shown = SettingRow.Scope(new StackPanel());
+            var drawn = SettingRow.Scope(new StackPanel());
+
+            _orientation = AddCombo(shown, "Orientation", _orientations, initial.Orientation, topMargin: 0,
                 tooltip: "Which end of the axis 0% sits at, and so the direction the bars fill.");
 
-            // What the graph shows, then how it is drawn: the toggles decide which parts are there at
-            // all, so they sit with the orientation rather than among the sliders that size them.
-            _showAxis = AddCheckBox(panel, _axisLabel, initial.ShowAxis, topMargin: 16,
+            _showAxis = AddCheckBox(shown, _axisLabel, initial.ShowAxis, topMargin: 16,
                 tooltip: "Show the 0–100% scale beside the plot. Hiding it gives the room to the bars; "
                     + "the faint gridlines stay either way.");
-            _showUsedSpace = AddCheckBox(panel, "Show used space", initial.ShowUsedSpace, topMargin: 8,
+            _showUsedSpace = AddCheckBox(shown, "Show used space", initial.ShowUsedSpace, topMargin: 8,
                 tooltip: "Write how much of each drive is in use (e.g. \"400 GB\") against its bar.");
-            _showTotalSpace = AddCheckBox(panel, "Show total space", initial.ShowTotalSpace, topMargin: 8,
+            _showTotalSpace = AddCheckBox(shown, "Show total space", initial.ShowTotalSpace, topMargin: 8,
                 tooltip: "Write each drive's total size at the 100% end of its bar.");
 
-            _barGap = AddSlider(panel, "Gap between bars", min: 0, max: 50, value: initial.BarGapPercent,
-                small: 5, large: 10, format: v => $"{v:0}%", topMargin: 16,
+            _barGap = AddSlider(drawn, "Gap between bars", min: 0, max: 50, value: initial.BarGapPercent,
+                small: 5, large: 10, format: v => $"{v:0}%", topMargin: 0,
                 tooltip: "How much of each bar's share of the graph is space rather than bar. The bars "
                     + "always fill the window, so this divides it up — it doesn't resize the graph.");
 
-            _cornerRadius = AddSlider(panel, "Corner radius", min: 0, max: 20, value: initial.BarCornerRadius,
+            _cornerRadius = AddSlider(drawn, "Corner radius", min: 0, max: 20, value: initial.BarCornerRadius,
                 small: 1, large: 2, format: v => $"{v:0}", topMargin: 12,
                 tooltip: "How rounded the ends of each bar are. 0 gives square corners; a large value "
                     + "rounds a bar as far as its thickness allows.");
             _cornerRadius.TickFrequency = 1;
             _cornerRadius.IsSnapToTickEnabled = true;
 
-            _trackOpacity = AddSlider(panel, "Unused space transparency", min: 0, max: 1, value: initial.TrackOpacity,
+            _trackOpacity = AddSlider(drawn, "Unused space transparency", min: 0, max: 1, value: initial.TrackOpacity,
                 small: 0.05, large: 0.1, format: v => $"{v * 100:0}%", topMargin: 12,
                 tooltip: "How solid the free part of each bar is drawn, beyond the fill. 0% hides it "
                     + "and leaves the fill floating on the desktop.");
 
-            _lowThreshold = AddPercentSlider(panel, "Low threshold", initial.LowThresholdPercent,
+            _lowThreshold = AddPercentSlider(drawn, "Low threshold", initial.LowThresholdPercent,
                 tooltip: "A drive with less free space than this turns the 'low' colour.");
-            _criticalThreshold = AddPercentSlider(panel, "Critical threshold", initial.CriticalThresholdPercent,
+            _criticalThreshold = AddPercentSlider(drawn, "Critical threshold", initial.CriticalThresholdPercent,
                 tooltip: "A drive with less free space than this turns the 'critical' colour. "
                     + "It wins over the low threshold.");
 
+            panel.Children.Add(shown);
+            panel.Children.Add(new Separator { Margin = new Thickness(0, 8, 0, 8) });
+            panel.Children.Add(drawn);
+
             // Scrollable like the other two tabs: this is the longest of them, and the dialog is a
             // fixed size, so without this the last settings sit below the bottom edge unreachable.
-            return SettingRow.Scope(new ScrollViewer
+            return new ScrollViewer
             {
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 Content = panel,
-            });
+            };
         }
 
         // Effects: how each bar's fill is outlined, then the reusable text outer glow. Only the rows

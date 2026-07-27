@@ -102,8 +102,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings rows are laid out as a form.** Each setting now sits on one row — a
   right-aligned caption, its control, then its value — instead of a caption stacked
   above a full-width control, so the controls line up down the page. The captions
-  share a column sized to the tab you are on, so a tab reserves no room for captions
-  that live on a different one, and the dialog is 20% wider to suit. The threshold
+  share a column sized to the section you are looking at, so no room is reserved for
+  captions that live elsewhere, and the dialog is 20% wider to suit. The bar graphs'
+  *Appearance* tab is divided by a rule into what the graph shows and how it is
+  drawn, each half justified on its own. The threshold
   captions ("Ring turns 'low' when free space drops below") are now just **Low
   threshold** and **Critical threshold**, and on the bar graphs the three display
   toggles moved up to sit with the orientation.
