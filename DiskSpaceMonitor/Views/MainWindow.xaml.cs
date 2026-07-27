@@ -447,21 +447,29 @@ namespace DiskSpaceMonitor.Views
             double width = left ? _anchorX - mouseX : mouseX - _anchorX;
             double height = top ? _anchorY - mouseY : mouseY - _anchorY;
 
-            // Freely-sized widget (either bar graph): each axis follows its own drag and nothing
-            // couples them, so a side handle stretches in that direction alone and a corner does
-            // both. The content fills whatever comes out. (Edge snapping stays square-only.)
+            var others = App.Instance.OtherWidgetBounds(this);
+
+            // Freely-sized widget (either bar graph, or a box): each axis follows its own drag and
+            // nothing couples them, so a side handle stretches in that direction alone and a corner
+            // does both, and the content fills whatever comes out. Each dragged edge snaps to the
+            // other windows' edges on its own axis and stops flush against anything in its way —
+            // the same rules a move follows, applied one edge at a time.
             if (ResizesFreely)
             {
                 if (dragsX)
                 {
-                    double w = Math.Clamp(width, MinSize, MaxWidthLimit);
+                    double w = WidgetLayout.SnapAndClampResizeAxis(_anchorX, left, width,
+                        Top, Top + CurrentHeight, others, horizontal: true, MinSize, MaxWidthLimit);
                     Left = left ? _anchorX - w : _anchorX;
                     Width = w;
                 }
 
+                // The vertical drag reads the horizontal span the line above just settled, so a
+                // corner drag decides both edges against where the window actually ends up.
                 if (dragsY)
                 {
-                    double h = Math.Clamp(height, MinSize, MaxHeightLimit);
+                    double h = WidgetLayout.SnapAndClampResizeAxis(_anchorY, top, height,
+                        Left, Left + CurrentWidth, others, horizontal: false, MinSize, MaxHeightLimit);
                     Top = top ? _anchorY - h : _anchorY;
                     Height = h;
                 }
@@ -473,7 +481,6 @@ namespace DiskSpaceMonitor.Views
             double candidate = Math.Max(width, height);
 
             // Snap edges to other widgets and stop the square growing into them.
-            var others = App.Instance.OtherWidgetBounds(this);
             double size = WidgetLayout.SnapAndClampResize(
                 _anchorX, _anchorY, left, top, candidate, others,
                 MinSize, Math.Min(MaxWidthLimit, MaxHeightLimit));

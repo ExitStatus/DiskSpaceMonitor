@@ -74,6 +74,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resizes the bars and leaves the labels alone — only a widget that has grown in both
   directions gets bigger text — and it stops at the minimum size, so one squeezed
   along an axis holds its labels at something readable rather than shrinking them away.
+  Each dragged edge snaps to the other widgets' edges on its own axis — flush against
+  a neighbour, or level with its far side to match two widgets' widths — and stops
+  there rather than crossing it, so a freely-sized widget follows the same no-overlap
+  rule a moved one does.
   Every multi-drive style keeps its own window rectangle, so switching between the
   concentric, vertical and horizontal styles restores the shape each was last given.
 - **App-wide font and text size bounds** – the *General* tab gains a **Font** row

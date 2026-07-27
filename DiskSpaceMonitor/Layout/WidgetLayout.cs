@@ -195,6 +195,64 @@ namespace DiskSpaceMonitor.Layout
         }
 
         /// <summary>
+        /// Snap and clamp one axis of a free resize — the widget styles whose width and height are
+        /// dragged separately. The window is anchored at <paramref name="anchor"/> (the edge
+        /// opposite the one being dragged) and the dragged edge sits <paramref name="candidate"/>
+        /// away from it, on the low side when <paramref name="towardsLow"/>.
+        /// <para>Every other window offers both of its edges on this axis to snap to, so a dragged
+        /// edge lines up with a neighbour whether it ends flush against it or level with its far
+        /// side. Only a window this one overlaps on the *other* axis — its span given as
+        /// <paramref name="crossLo"/>..<paramref name="crossHi"/> — can actually be run into, so a
+        /// neighbour sitting alongside guides the edge without ever blocking it.</para>
+        /// </summary>
+        public static double SnapAndClampResizeAxis(double anchor, bool towardsLow, double candidate,
+            double crossLo, double crossHi, IReadOnlyList<Rect> others, bool horizontal,
+            double minSize, double maxSize)
+        {
+            int sgn = towardsLow ? -1 : 1;
+
+            double size = candidate;
+            double bestDist = SnapThreshold;
+
+            foreach (var o in others)
+            {
+                var (lo, hi) = Span(o, horizontal);
+                ConsiderSnap(sgn > 0 ? lo - anchor : anchor - lo);
+                ConsiderSnap(sgn > 0 ? hi - anchor : anchor - hi);
+            }
+
+            foreach (var o in others)
+            {
+                var (crossOtherLo, crossOtherHi) = Span(o, !horizontal);
+                if (crossLo >= crossOtherHi - Eps || crossHi <= crossOtherLo + Eps)
+                    continue;   // side by side on the other axis: never in the way
+
+                var (lo, hi) = Span(o, horizontal);
+                double gap = AxisGap(anchor, sgn, lo, hi);
+                if (!double.IsNaN(gap))
+                    size = Math.Min(size, gap);
+            }
+
+            return Math.Clamp(size, minSize, maxSize);
+
+            void ConsiderSnap(double s)
+            {
+                if (s < minSize || s > maxSize)
+                    return;
+                double d = Math.Abs(s - candidate);
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    size = s;
+                }
+            }
+        }
+
+        /// <summary>A rectangle's extent along one axis.</summary>
+        private static (double Lo, double Hi) Span(Rect r, bool horizontal)
+            => horizontal ? (r.Left, r.Right) : (r.Top, r.Bottom);
+
+        /// <summary>
         /// Size at which a corner-anchored edge growing along <paramref name="sgn"/> first
         /// reaches obstacle interval [lo, hi]. NaN if it never can (obstacle is behind).
         /// </summary>

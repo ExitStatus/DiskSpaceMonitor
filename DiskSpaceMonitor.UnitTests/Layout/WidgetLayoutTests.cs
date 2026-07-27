@@ -225,5 +225,112 @@ namespace DiskSpaceMonitor.UnitTests.Layout
             WidgetLayout.SnapAndClampResize(0, 0, false, false, 5000, none, 120, 600)
                 .Should().Be(600);
         }
+
+        // --- Snapping + clamping (free resize, one axis at a time) ------------
+
+        // A window anchored at x=0 whose right edge is dragged out to 246: the neighbour's left edge
+        // at 250 is within the threshold, so the edge lands flush against it.
+        [Test]
+        public void SnapAndClampResizeAxis_NearNeighboursEdge_SnapsFlush()
+        {
+            var others = Others(new Rect(250, 0, 100, 100));
+
+            double size = WidgetLayout.SnapAndClampResizeAxis(
+                anchor: 0, towardsLow: false, candidate: 246, crossLo: 0, crossHi: 100,
+                others, horizontal: true, minSize: 60, maxSize: 2000);
+
+            size.Should().Be(250);
+        }
+
+        // The far edge is offered too, so a window can be dragged out to finish level with one on
+        // another row — the common case of lining two widgets up to the same width.
+        [Test]
+        public void SnapAndClampResizeAxis_NearNeighboursFarEdge_SnapsLevel()
+        {
+            var others = Others(new Rect(250, 500, 100, 100));
+
+            double size = WidgetLayout.SnapAndClampResizeAxis(
+                anchor: 0, towardsLow: false, candidate: 353, crossLo: 0, crossHi: 100,
+                others, horizontal: true, minSize: 60, maxSize: 2000);
+
+            size.Should().Be(350);
+        }
+
+        // Dragging a left edge leftwards: the anchor is the right edge, and the neighbour's right
+        // edge at 100 is what the moving edge meets.
+        [Test]
+        public void SnapAndClampResizeAxis_DraggingTowardsLow_SnapsToTheEdgeItMeets()
+        {
+            var others = Others(new Rect(0, 0, 100, 100));
+
+            double size = WidgetLayout.SnapAndClampResizeAxis(
+                anchor: 400, towardsLow: true, candidate: 296, crossLo: 0, crossHi: 100,
+                others, horizontal: true, minSize: 60, maxSize: 2000);
+
+            size.Should().Be(300);
+        }
+
+        // Past the snap threshold the edge keeps going, but never through a neighbour it shares
+        // rows with — widgets don't overlap, however they are resized.
+        [Test]
+        public void SnapAndClampResizeAxis_GrowingIntoNeighbour_StopsFlush()
+        {
+            var others = Others(new Rect(250, 0, 100, 100));
+
+            double size = WidgetLayout.SnapAndClampResizeAxis(
+                anchor: 0, towardsLow: false, candidate: 900, crossLo: 0, crossHi: 100,
+                others, horizontal: true, minSize: 60, maxSize: 2000);
+
+            size.Should().Be(250);
+        }
+
+        // A neighbour on a different row can't be run into, so it only ever guides the edge.
+        [Test]
+        public void SnapAndClampResizeAxis_NeighbourOnAnotherRow_DoesNotBlock()
+        {
+            var others = Others(new Rect(250, 500, 100, 100));
+
+            double size = WidgetLayout.SnapAndClampResizeAxis(
+                anchor: 0, towardsLow: false, candidate: 900, crossLo: 0, crossHi: 100,
+                others, horizontal: true, minSize: 60, maxSize: 2000);
+
+            size.Should().Be(900);
+        }
+
+        [Test]
+        public void SnapAndClampResizeAxis_NeighbourBehindTheAnchor_DoesNotBlock()
+        {
+            var others = Others(new Rect(-500, 0, 100, 100));
+
+            double size = WidgetLayout.SnapAndClampResizeAxis(
+                anchor: 0, towardsLow: false, candidate: 300, crossLo: 0, crossHi: 100,
+                others, horizontal: true, minSize: 60, maxSize: 2000);
+
+            size.Should().Be(300);
+        }
+
+        // The vertical axis is the same code reading the other pair of edges.
+        [Test]
+        public void SnapAndClampResizeAxis_Vertical_SnapsToTheNeighboursTop()
+        {
+            var others = Others(new Rect(0, 250, 100, 100));
+
+            double size = WidgetLayout.SnapAndClampResizeAxis(
+                anchor: 0, towardsLow: false, candidate: 245, crossLo: 0, crossHi: 100,
+                others, horizontal: false, minSize: 60, maxSize: 2000);
+
+            size.Should().Be(250);
+        }
+
+        [Test]
+        public void SnapAndClampResizeAxis_ClampsToMinAndMax()
+        {
+            var none = Others();
+
+            WidgetLayout.SnapAndClampResizeAxis(0, false, 10, 0, 100, none, true, 60, 600)
+                .Should().Be(60);
+            WidgetLayout.SnapAndClampResizeAxis(0, false, 5000, 0, 100, none, true, 60, 600)
+                .Should().Be(600);
+        }
     }
 }

@@ -91,7 +91,9 @@ drive's status):
   desktop. Hold **Ctrl** to make the widget interactive.
 - **Snapping & no overlap** – dragging snaps to other widgets and to screen edges
   (stopping at the taskbar), keeps the whole widget on-screen, moves freely across
-  multiple monitors, and never lets widgets overlap.
+  multiple monitors, and never lets widgets overlap. Resizing snaps too: an edge you
+  drag lines up with a neighbour's edge — flush against it, or level with its far
+  side to match two widgets' widths — and stops there rather than crossing it.
 - **Customisable appearance** – opacities, ring thickness, and the colour of every
   part, all with a live preview.
 - **Configurable thresholds** – choose the free-space percentages at which a drive
