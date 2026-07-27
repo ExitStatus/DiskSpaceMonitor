@@ -35,6 +35,12 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
         private const double CaptionBaseFont = 10;     // default size for the used/total captions
         private const double CaptionRotatedFont = 8;   // size used once rotated
 
+        // Clearance between the used-space caption and the 0% end of its bar. A rotated caption
+        // reads up from inside the fill and needs the room; a horizontal one only rides the fill's
+        // leading edge.
+        private const double CaptionGap = 2;
+        private const double RotatedCaptionGap = 10;
+
         // Smallest and largest text scale, so a widget squeezed to the minimum still reads and a
         // full-screen one doesn't turn into a poster.
         private const double MinScale = 0.4;
@@ -281,7 +287,10 @@ namespace DiskSpaceMonitor.Widgets.VerticalBar
             if (!string.IsNullOrEmpty(bar.UsedLabel))
             {
                 var caption = BuildCaption(bar.UsedLabel, text, captionFont, rotate);
-                double nudge = (rotate ? 6 : 2) * _scale;   // rotated: nudged a further 4px clear of the end
+
+                // The caption is anchored to the 0% end, so its margin pushes it away from that end:
+                // up when the bars grow up, down when the axis is flipped.
+                double nudge = (rotate ? RotatedCaptionGap : CaptionGap) * _scale;
                 caption.Margin = _topDown ? new Thickness(0, nudge, 0, 0) : new Thickness(0, 0, 0, nudge);
 
                 // Horizontal captions sit in the unused row so they ride the fill's leading edge;

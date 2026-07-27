@@ -47,8 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   direction, the labels and the totals. It offers the same bar gap, corner rounding,
   unused-space transparency, colours, thresholds, caption toggles, bar styles and text
   glow as the vertical graph — with **Show horizontal axis** for its own 0–100% scale
-  along the bottom — and keeps its own copy of them all. Captions scale to the bar's slot
-  instead of rotating, since a horizontal bar has the whole axis to write along. Both
+  along the bottom — and keeps its own copy of them all. Captions scale to the bar's
+  slot instead of rotating, since a horizontal bar has the whole axis to write along. Both
   graphs share their configuration, settings editor and fill rendering
   (`Widgets/BarGraph/`), so an option added to one arrives in the other.
 - **Free sizing for both bar graphs** – a bar graph's width and height are dragged

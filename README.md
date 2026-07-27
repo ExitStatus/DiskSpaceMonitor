@@ -48,8 +48,9 @@ drive's status):
     the 0% end and the total at the 100% end. Its **Orientation** is *Left to Right*
     (0% at the left) or *Right to Left* (0% at the right), and it offers the same
     bar gap, corner rounding, transparency, colours, thresholds, captions, axis
-    toggle, bar styles and glow as the vertical graph. Captions scale to the bar's slot rather than rotating, since a
-    horizontal bar has the whole axis to write along.
+    toggle, bar styles and glow as the vertical graph. Captions scale to the bar's
+    slot rather than rotating, since a horizontal bar has the whole axis to write
+    along.
 - **Bar graphs stretch in either direction** – both graphs get a resize handle at
   the centre of each side as well as at each corner, and the chart fills whatever
   rectangle you drag: stretch a horizontal graph sideways and its bars lengthen,
