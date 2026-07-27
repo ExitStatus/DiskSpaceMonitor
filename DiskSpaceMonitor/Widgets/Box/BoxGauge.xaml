@@ -1,0 +1,8 @@
+<UserControl x:Class="DiskSpaceMonitor.Widgets.Box.BoxGauge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Root fills the window: the panel stretches with it and its three rows are proportional,
+         so the bar keeps its share of the height at any size, and only the text is scaled (see
+         the code-behind) — stretching one direction alone leaves the labels alone. -->
+    <Grid x:Name="Root"/>
+</UserControl>

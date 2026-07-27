@@ -13,10 +13,11 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         string UsedLabel, string TotalLabel);
 
     /// <summary>
-    /// How to outline a bar's fill: the chosen style, the outline width, the corner rounding, and
-    /// the colours each style draws with (the unused ones are ignored). The gauge scales
-    /// <paramref name="Size"/> and <paramref name="Corner"/> with its text, so an outline keeps its
-    /// weight relative to the graph rather than turning into a hairline on a large widget.
+    /// How to outline a filled shape — a bar, or the box widget's whole panel: the chosen style,
+    /// the outline width, the corner rounding, and the colours each style draws with (the unused
+    /// ones are ignored). The widget scales <paramref name="Size"/> and <paramref name="Corner"/>
+    /// with its text, so an outline keeps its weight relative to the widget rather than turning
+    /// into a hairline on a large one.
     /// </summary>
     internal readonly record struct BarSkin(BarStyle Style, double Size, double Corner, Color Border,
         Color Highlight, Color Lowlight);
@@ -45,20 +46,24 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
             => typography.Clamp(baseSize * scale);
 
         /// <summary>
-        /// The used portion of a bar, outlined per the chosen bar style. Plain is a bare rounded
-        /// block; Border rings it evenly; 3D Border lays a lit edge and a shaded edge over it so the
-        /// bar reads as raised. The bevel is two overlaid Borders because a single one can only
-        /// carry one brush, and the two halves need different colours. The bevel is anchored to the
-        /// screen (top-left lit) rather than to the axis, so it stays consistent whichever way the
-        /// bars grow.
+        /// A filled, rounded block outlined per the chosen style — the used portion of a bar, or
+        /// the box widget's panel. Plain is bare; Border rings it evenly; 3D Border lays a lit edge
+        /// and a shaded edge over it so the block reads as raised. The bevel is two overlaid Borders
+        /// because a single one can only carry one brush, and the two halves need different colours.
+        /// The bevel is anchored to the screen (top-left lit) rather than to the axis, so it stays
+        /// consistent whichever way the bars grow.
+        /// <para><paramref name="content"/> rides inside the fill, so a caller wanting a panel gets
+        /// the same three styles the bars use. It sits under the bevel's edges, so pad it clear of
+        /// them.</para>
         /// </summary>
-        internal static FrameworkElement BuildFill(Color color, BarSkin skin)
+        internal static FrameworkElement BuildFill(Color color, BarSkin skin, UIElement? content = null)
         {
             var corners = new CornerRadius(skin.Corner);
             var fill = new Border
             {
                 Background = new SolidColorBrush(color),
                 CornerRadius = corners,
+                Child = content,
             };
 
             double size = Math.Max(0, skin.Size);

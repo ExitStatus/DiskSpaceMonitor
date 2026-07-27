@@ -4,8 +4,9 @@ A borderless desktop widget that sits **behind** all your other windows (like a
 wallpaper gadget) and shows remaining space on your drives. Pick a **style** from
 the settings dialog: the **Circular gauge** (one gauge per drive, each its own
 window you can place and size independently), **Concentric circles** (a single
-window drawing every drive as a nested ring), or a **Vertical bar graph** or
-**Horizontal bar graph** (a bar per drive on a 0–100% axis).
+window drawing every drive as a nested ring), a **Vertical bar graph** or
+**Horizontal bar graph** (a bar per drive on a 0–100% axis), or a **Box** (one
+rounded panel per drive, listing its size and used space above a bar).
 
 ![Disk Space Monitor running on the desktop](Docs/main.png)
 
@@ -19,7 +20,7 @@ drive's status):
 
 ## Features
 
-- **Four widget styles** – choose the look from a **Widget** dropdown:
+- **Five widget styles** – choose the look from a **Widget** dropdown:
   - **Circular gauge** – one gauge per drive; the ring fills with used space and
     its colour shifts green → amber → red as free space runs low. The centre shows
     the drive letter and total size, the free space, and the percentage free, with
@@ -51,20 +52,29 @@ drive's status):
     toggle, bar styles and glow as the vertical graph. Captions scale to the bar's
     slot rather than rotating, since a horizontal bar has the whole axis to write
     along.
-- **Bar graphs stretch in either direction** – both graphs get a resize handle at
-  the centre of each side as well as at each corner, and the chart fills whatever
+  - **Box** – one rounded panel per drive holding three centred rows: the drive and
+    its total size, the used space, and a bar filled to the used % and coloured by
+    status. Width and height are dragged independently (side handles as well as
+    corners) and the panel fills the result; the bar keeps its configured share of
+    the height whatever shape you give it, and the two text rows split the rest. The
+    panel and the bar are styled apart — each has its own corner rounding and its own
+    *Plain* / *Border* / *3D Border* outline with its own width and colours — and the
+    background and the border each have their own transparency, so the box can be
+    anything from a solid slab to an outline with the desktop showing through.
+- **Bar graphs and boxes stretch in either direction** – they get a resize handle at
+  the centre of each side as well as at each corner, and the content fills whatever
   rectangle you drag: stretch a horizontal graph sideways and its bars lengthen,
-  stretch it downwards and they thicken. There is no size cap beyond the monitor
-  itself. The labels only change size when the graph grows in *both* directions, so
-  a one-way stretch resizes the bars and leaves the text where it was — and they
-  stop at the minimum text size, so a short graph stays readable.
+  stretch it downwards and they thicken; a box does the same. There is no size cap
+  beyond the monitor itself. The labels only change size when the widget grows in
+  *both* directions, so a one-way stretch resizes the bars and leaves the text where
+  it was — and they stop at the minimum text size, so a short one stays readable.
 - **Pluggable widget styles** – new styles plug in by implementing a single
   interface, with their own settings tabs, in their own `Widgets/<Name>/` folder.
   Each style remembers its own configuration independently.
 - **Multiple drives** – managed from the settings dialog (at least one is always
-  shown): the Circular style shows one gauge per drive; Concentric and both bar
-  graphs show them all in one window.
-- **One font for every widget** – the *General* tab picks the font all four styles
+  shown): the Circular and Box styles show one window per drive; Concentric and both
+  bar graphs show them all in one window.
+- **One font for every widget** – the *General* tab picks the font all five styles
   draw with, previewed in the font itself, chosen from a dialog listing every
   installed family (each shown in its own face, with a filter box and a sample).
   **Minimum** and **maximum** text sizes bound what every widget renders, whatever
@@ -86,7 +96,7 @@ drive's status):
   part, all with a live preview.
 - **Configurable thresholds** – choose the free-space percentages at which a drive
   turns "low" and "critical" (colouring the Circular ring, the Concentric chip, or
-  a bar in either bar graph).
+  a bar in either bar graph or in a box).
 - **Auto-start** – optionally launch at login (a per-user `Run` registry entry).
 - **Efficient** – idle between refreshes; a single low-level keyboard hook wakes
   the UI only while Ctrl is held (no continuous polling). The working set is
@@ -101,9 +111,9 @@ drive's status):
 | Action    | How                                                                  |
 |-----------|----------------------------------------------------------------------|
 | Move      | Hold **Ctrl**, click-drag anywhere on the widget                     |
-| Resize    | Hold **Ctrl**, hover, drag a corner handle — or, on either bar graph, a side handle to stretch that way alone |
+| Resize    | Hold **Ctrl**, hover, drag a corner handle — or, on either bar graph or a box, a side handle to stretch that way alone |
 | Settings  | Hold **Ctrl**, click the ⚙ button in the centre, or right-click → Settings… |
-| Hide one  | Right-click → **Hide this drive** (Circular style only)              |
+| Hide one  | Right-click → **Hide this drive** (Circular and Box styles)          |
 | Quit      | Settings → **Exit Application**, or right-click → Exit application   |
 
 ## Project structure
@@ -122,6 +132,7 @@ DiskSpaceMonitor/              # WPF app
     BarGraph/                 # shared by both bar graphs (config, editor, widget base, fill)
     VerticalBar/              # vertical bar graph – one window, a bar per drive
     HorizontalBar/            # horizontal bar graph – the same, turned on its side
+    Box/                      # box – one rounded panel per drive, text above a bar
     Effects/                  # reusable widget effects (text outer glow)
   Layout/                     # WidgetLayout (snapping + collision geometry)
   Settings/                   # WidgetSettings, JsonSettingsStore
@@ -184,7 +195,7 @@ The settings dialog (the centred ⚙ button or right-click → Settings…) is t
   dropdown, overall widget opacity, and the app-wide **text** settings: the
   **font** (with a preview and a **Choose…** dialog listing every installed
   family) and the **minimum** and **maximum** sizes every widget holds its text
-  within. These apply to all four styles, so text doesn't change when you switch.
+  within. These apply to all five styles, so text doesn't change when you switch.
 - **Drives** – which drives to show (at least one is always kept).
 - The selected widget then contributes its own tabs:
   - **Circular gauge** – *Appearance* (background opacity, ring thickness, and the
@@ -208,6 +219,14 @@ The settings dialog (the centred ⚙ button or right-click → Settings…) is t
     *Left to Right* / *Right to Left* orientations. It keeps its own copy of every
     setting — and its own window size and position — so the two graphs can be
     styled and shaped differently.
+  - **Box** – *Appearance*, divided by a rule into the box's shape (**Corner radius**,
+    **Bar corner radius** and the bar's share of the height) and how solidly it is
+    painted (**Background** / **Border** / **Unused space** transparencies and the
+    low/critical thresholds); *Colours* (the text and panel colours, the unused-space
+    track, and the healthy/low/critical status colours); and an effects tab each for
+    the panel and the bar — **Box effects** and **Bar effects** — since the two are
+    outlined independently: a style of Plain, Border or 3D Border with its own width
+    and colours. The text's outer glow sits with the box, which holds it.
 
 Every setting sits on one row — a right-aligned caption, then its control, then its
 value — with the captions in a column sized to the section showing, so the controls

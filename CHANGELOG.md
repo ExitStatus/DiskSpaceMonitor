@@ -51,29 +51,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   slot instead of rotating, since a horizontal bar has the whole axis to write along. Both
   graphs share their configuration, settings editor and fill rendering
   (`Widgets/BarGraph/`), so an option added to one arrives in the other.
-- **Free sizing for both bar graphs** – a bar graph's width and height are dragged
+- **Box widget** – a fifth style: one rounded panel per drive — placed and sized on
+  its own, like the circular gauge — holding three centred rows: the drive and its
+  total size, the used space humanized, and a bar filled to the used % and coloured
+  by free-space status against the same thresholds as the other styles. Width and
+  height are dragged independently (see *Free sizing* below) and the panel fills the
+  result: the bar keeps its configured share of the height whatever shape the box is
+  given, and the two text rows split the rest. The panel and the bar are styled
+  apart — each has its own corner rounding, and its own **Box effects** / **Bar
+  effects** tab carrying a **Plain** / **Border** / **3D Border** outline with its
+  own width and colours — and the background and the border each have their own
+  transparency, so a box can be a solid slab or an outline with the desktop showing
+  through. Text, panel, unused-space and status colours are all configurable, with
+  the same text outer glow as the other styles. A box opens wide rather than square
+  the first time it is shown, so it needs no dragging into shape.
+- **Free sizing for the bar graphs and the box** – their width and height are dragged
   independently, from a resize handle at the **centre of each side** as well as at
-  each corner, and the chart fills whatever rectangle you give it: stretch a
+  each corner, and the content fills whatever rectangle you give it: stretch a
   horizontal graph sideways and its bars lengthen, stretch it downwards and they
-  thicken; the vertical graph does the same the other way round. Text size follows
-  the *smaller* of the two directions, so a one-way stretch resizes the bars and
-  leaves the labels alone — only a graph that has grown in both directions gets
-  bigger text — and it stops at the minimum size, so a graph squeezed along one axis
-  holds its labels at something readable rather than shrinking them away.
+  thicken; the vertical graph does the same the other way round, and a box the same
+  again. Text size follows the *smaller* of the two directions, so a one-way stretch
+  resizes the bars and leaves the labels alone — only a widget that has grown in both
+  directions gets bigger text — and it stops at the minimum size, so one squeezed
+  along an axis holds its labels at something readable rather than shrinking them away.
   Every multi-drive style keeps its own window rectangle, so switching between the
   concentric, vertical and horizontal styles restores the shape each was last given.
 - **App-wide font and text size bounds** – the *General* tab gains a **Font** row
   showing the chosen font drawn in itself, with a **Choose…** button opening a
   chooser that lists every installed family (each drawn in its own face), filters as
   you type, and previews a sample; and **Minimum size** / **Maximum size** sliders
-  that bound what every widget renders text at. All three apply to all four styles,
+  that bound what every widget renders text at. All three apply to all five styles,
   so text doesn't change when you switch, and they preview live as you pick — Cancel
   puts them back. The bounds are on the *rendered* size, so they hold whatever size
   the widget is: a gauge dragged across the screen stops its labels growing at the
   maximum instead of turning them into a poster, and a small one holds them at the
   minimum instead of shrinking them away.
 - **Tooltips on every setting** – hovering any part of a settings row — its caption,
-  its control or its value — explains what that setting affects, on all four widget
+  its control or its value — explains what that setting affects, on all five widget
   styles as well as the General and Drives tabs.
 - **Colour picker** – each colour row now has a live swatch, an editable `#RRGGBB`
   box (with copy/paste), and a pipette button that opens a hue/saturation/brightness
@@ -81,12 +95,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   you drag; **Cancel** reverts. Replaces the inline R/G/B sliders.
 - **Per-style settings** – every widget style keeps its own configuration, so
   switching styles or restarting no longer resets another style's settings.
-- **Text outer glow** – the circular gauge and both bar graphs each gain an
+- **Text outer glow** – the circular gauge, both bar graphs and the box each gain an
   **Effects** tab with an **Outer glow** radius (0–10) and an **Outer glow colour**,
   adding an alpha-blended halo around the widget's text (the gauge's centre stats;
-  a bar graph's labels, captions and axis ticks). The glow renders as stacked blurred
-  copies strictly *behind* the text, so the glyphs stay sharp. It's a reusable
-  component (`Widgets/Effects/`), ready for future widgets to adopt.
+  a bar graph's labels, captions and axis ticks; a box's two rows). The glow renders
+  as stacked blurred copies strictly *behind* the text, so the glyphs stay sharp. It's
+  a reusable component (`Widgets/Effects/`), ready for future widgets to adopt.
 
 ### Changed
 

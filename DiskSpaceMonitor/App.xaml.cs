@@ -10,6 +10,7 @@ using DiskSpaceMonitor.Interop;
 using DiskSpaceMonitor.Settings;
 using DiskSpaceMonitor.Startup;
 using DiskSpaceMonitor.Widgets;
+using DiskSpaceMonitor.Widgets.Box;
 using DiskSpaceMonitor.Widgets.Circular;
 using DiskSpaceMonitor.Widgets.Concentric;
 using DiskSpaceMonitor.Widgets.HorizontalBar;
@@ -26,7 +27,7 @@ namespace DiskSpaceMonitor
     {
         private readonly List<MainWindow> _windows = new();
         private readonly WidgetRegistry _registry = new(new CircularWidget(), new ConcentricWidget(),
-            new VerticalBarWidget(), new HorizontalBarWidget());
+            new VerticalBarWidget(), new HorizontalBarWidget(), new BoxWidget());
 
         private ISettingsStore _store = null!;
         private IDriveReader _driveReader = null!;
@@ -114,8 +115,10 @@ namespace DiskSpaceMonitor
                 window.SetInteractive(ctrlDown);
         }
 
-        private void ShowWidget(DriveWidgetConfig cfg)
+        private void ShowWidget(DriveWidgetConfig cfg, string styleId)
         {
+            SeedSize(cfg, styleId);
+
             // Give unplaced widgets the first free, non-overlapping spot.
             if (double.IsNaN(cfg.Left) || double.IsNaN(cfg.Top))
             {
@@ -159,6 +162,7 @@ namespace DiskSpaceMonitor
                 // Each multi-drive style keeps its own window rectangle, so switching between them
                 // restores the frame that style was last given rather than inheriting the last one's.
                 var single = _settings.SingleInstanceFor(styleId);
+                SeedSize(single, styleId);
                 if (double.IsNaN(single.Left) || double.IsNaN(single.Top))
                 {
                     var spot = FindFreeSpot(single.Width ?? single.Size, single.Height ?? single.Size);
@@ -173,11 +177,27 @@ namespace DiskSpaceMonitor
             else
             {
                 foreach (var cfg in _settings.Drives.ToList())
-                    ShowWidget(cfg);
+                    ShowWidget(cfg, styleId);
             }
 
             _topologyShowsAll = showsAllDrives;
             _topologyStyle = styleId;
+        }
+
+        /// <summary>
+        /// Give a window that has never been sized the rectangle its style asks for. Only a style
+        /// that sizes each direction separately offers one — a wide shape opening as a square would
+        /// have to be dragged into shape on first use. A size the user has dragged is already
+        /// recorded, so this never overrides their choice.
+        /// </summary>
+        private void SeedSize(DriveWidgetConfig cfg, string styleId)
+        {
+            if (cfg.Width is null && cfg.Height is null &&
+                _registry.Get(styleId).DefaultWindowSize is { } size)
+            {
+                cfg.Width = size.Width;
+                cfg.Height = size.Height;
+            }
         }
 
         /// <summary>Screen bounds of every widget except <paramref name="self"/>.</summary>
@@ -341,7 +361,7 @@ namespace DiskSpaceMonitor
                     {
                         var cfg = new DriveWidgetConfig { DrivePath = path, Size = newWidgetSize };
                         _settings.Drives.Add(cfg);
-                        ShowWidget(cfg);
+                        ShowWidget(cfg, _settings.Style);
                     }
                 }
             }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using DiskSpaceMonitor.Widgets;
 using DiskSpaceMonitor.Widgets.BarGraph;
+using DiskSpaceMonitor.Widgets.Box;
 using DiskSpaceMonitor.Widgets.HorizontalBar;
 using DiskSpaceMonitor.Widgets.VerticalBar;
 using DiskSpaceMonitor.Widgets.Circular;
@@ -71,13 +72,26 @@ namespace DiskSpaceMonitor.UnitTests.Widgets
         public void RealWidgets_ExposeCorrectInstancing()
         {
             var registry = new WidgetRegistry(new CircularWidget(), new ConcentricWidget(),
-                new VerticalBarWidget(), new HorizontalBarWidget());
+                new VerticalBarWidget(), new HorizontalBarWidget(), new BoxWidget());
 
-            registry.All.Select(f => f.Id).Should().Equal("Circular", "Concentric", "VerticalBar", "HorizontalBar");
+            registry.All.Select(f => f.Id).Should()
+                .Equal("Circular", "Concentric", "VerticalBar", "HorizontalBar", "Box");
             registry.Get("Circular").ShowsAllDrives.Should().BeFalse();
             registry.Get("Concentric").ShowsAllDrives.Should().BeTrue();
             registry.Get("VerticalBar").ShowsAllDrives.Should().BeTrue();
             registry.Get("HorizontalBar").ShowsAllDrives.Should().BeTrue();
+            registry.Get("Box").ShowsAllDrives.Should().BeFalse();
+        }
+
+        // Only a freely-sized style proposes a starting rectangle; the square ones take the saved
+        // scalar, so a null here is the default rather than an oversight. The casts are needed
+        // because DefaultWindowSize is a default interface member.
+        [Test]
+        public void DefaultWindowSize_IsOfferedOnlyByTheStylesThatNeedIt()
+        {
+            ((IWidget)new BoxWidget()).DefaultWindowSize.Should().NotBeNull();
+            ((IWidget)new CircularWidget()).DefaultWindowSize.Should().BeNull();
+            ((IWidget)new ConcentricWidget()).DefaultWindowSize.Should().BeNull();
         }
     }
 }

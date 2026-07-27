@@ -24,18 +24,18 @@ namespace DiskSpaceMonitor.Widgets.BarGraph
         RightToLeft,
     }
 
-    /// <summary>How each bar's fill is outlined.</summary>
+    /// <summary>How a filled shape is outlined — a bar, or the box widget's panel.</summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum BarStyle
     {
-        /// <summary>No outline: just the flat status colour.</summary>
+        /// <summary>No outline: just the flat fill colour.</summary>
         Plain,
 
         /// <summary>A single-colour outline of the configured size around the fill.</summary>
         Border,
 
         /// <summary>A bevel: the highlight along the top and left, the lowlight down the right
-        /// and along the bottom, so the bar reads as raised.</summary>
+        /// and along the bottom, so the shape reads as raised.</summary>
         ThreeDBorder,
     }
 

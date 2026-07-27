@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using System.Windows;
 
 namespace DiskSpaceMonitor.Widgets
 {
@@ -24,6 +25,15 @@ namespace DiskSpaceMonitor.Widgets
 
         /// <summary>Create a fresh live view for a widget window.</summary>
         IWidgetView CreateView();
+
+        /// <summary>
+        /// The rectangle a window showing this widget starts at when the user has never sized one.
+        /// Only a style that sizes each direction separately (see <see cref="IWidgetView.ResizesFreely"/>)
+        /// needs to answer: a wide shape opening as a square would have to be dragged into shape on
+        /// first use. Null — the default — starts the window square at the saved size, as every
+        /// style did before.
+        /// </summary>
+        Size? DefaultWindowSize => null;
 
         // --- Config codec (UI-free, so it is unit-testable) ---
 
